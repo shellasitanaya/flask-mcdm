@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}SAW Method - MCDM App{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto p-6">
+
+  <h2 class="text-3xl font-bold mb-6">SAW Method</h2>
+
+  <div class="mb-8">
+    <form method="post" enctype="multipart/form-data" class="mb-6">
+      <label class="block font-semibold mb-2">Upload CSV file (optional):</label>
+      <input type="file" name="csv_file" accept=".csv" class="mb-3">
+      <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">Upload and Calculate</button>
+    </form>
+  </div>
+
+  <form method="post" class="mb-10">
+    <input type="hidden" name="alt_count" value="{{ alternatives|length }}">
+
+    <table class="w-full table-auto border-collapse border border-gray-300 mb-6">
+      <thead>
+        <tr class="bg-blue-100">
+          <th class="border border-gray-300 px-3 py-2">Alternatif</th>
+          {% for c in criteria %}
+          <th class="border border-gray-300 px-3 py-2">{{ c.nama }}<br><small>({{ c.tipe }})</small></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(alternatives|length) %}
+        <tr>
+          <td class="border border-gray-300 px-2 py-1 text-center">
+            <input type="text" name="alt_name_{{i}}" value="{{ alternatives[i] }}" class="w-full text-center border rounded px-1 py-1">
+          </td>
+          {% for j in range(criteria|length) %}
+          <td class="border border-gray-300 px-2 py-1 text-center">
+            <input type="number" step="any" min="0" name="value_{{i}}_{{j}}" value="{{ matrix[i][j] if matrix else '' }}" class="w-full text-center border rounded px-1 py-1" required>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition font-semibold">Calculate SAW</button>
+  </form>
+
+  {% if ranked %}
+  <section>
+    <h3 class="text-2xl font-bold mb-4">Ranking Results</h3>
+    <table class="w-full table-auto border-collapse border border-gray-300">
+      <thead>
+        <tr class="bg-blue-200">
+          <th class="border border-gray-300 px-3 py-2">Rank</th>
+          <th class="border border-gray-300 px-3 py-2">Alternatif</th>
+          <th class="border border-gray-300 px-3 py-2">Score (Vi)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alt, score in ranked %}
+        <tr>
+          <td class="border border-gray-300 px-3 py-2 text-center">{{ loop.index }}</td>
+          <td class="border border-gray-300 px-3 py-2">{{ alt }}</td>
+          <td class="border border-gray-300 px-3 py-2 text-center">{{ '%.4f'|format(score) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+
+  
+</section>
+
+
+{% if matrix and normalized_matrix and weighted_matrix and scores %}
+<hr class="my-10 border-t border-gray-400">
+
+<section class="mt-10">
+  <h3 class="text-2xl font-bold mb-4">Langkah-langkah Perhitungan SAW</h3>
+
+  <!-- Matriks Keputusan -->
+  <h4 class="text-xl font-semibold mt-6 mb-2">1. Matriks Keputusan</h4>
+  <table class="w-full border mb-6">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="border px-2 py-1">Alternatif</th>
+        {% for c in criteria %}
+        <th class="border px-2 py-1">{{ c.nama }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(alternatives|length) %}
+      <tr>
+        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+        {% for j in range(criteria|length) %}
+        <td class="border px-2 py-1 text-center">{{ matrix[i][j] }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Normalisasi -->
+  <h4 class="text-xl font-semibold mt-6 mb-2">2. Matriks Ternormalisasi</h4>
+  <table class="w-full border mb-6">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="border px-2 py-1">Alternatif</th>
+        {% for c in criteria %}
+        <th class="border px-2 py-1">{{ c.nama }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(alternatives|length) %}
+      <tr>
+        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+        {% for j in range(criteria|length) %}
+        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(normalized_matrix[i][j]) }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Bobot x Normalisasi -->
+  <h4 class="text-xl font-semibold mt-6 mb-2">3. Normalisasi x Bobot</h4>
+  <table class="w-full border mb-6">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="border px-2 py-1">Alternatif</th>
+        {% for c in criteria %}
+        <th class="border px-2 py-1">{{ c.nama }}<br><small>x {{ c.bobot }}</small></th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(alternatives|length) %}
+      <tr>
+        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+        {% for j in range(criteria|length) %}
+        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(weighted_matrix[i][j]) }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Nilai Akhir -->
+  <h4 class="text-xl font-semibold mt-6 mb-2">4. Nilai Akhir (V<sub>i</sub>)</h4>
+  <table class="w-full border mb-6">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="border px-2 py-1">Alternatif</th>
+        <th class="border px-2 py-1">Skor Akhir (V<sub>i</sub>)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(alternatives|length) %}
+      <tr>
+        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(scores[i]) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endblock %}
+
+
+
