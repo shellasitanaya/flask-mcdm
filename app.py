@@ -12,25 +12,6 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# def normalize_matrix(matrix, criteria_types):
-#     norm_matrix = np.zeros_like(matrix, dtype=float)
-#     for j in range(matrix.shape[1]):
-#         if criteria_types[j] == 'benefit':
-#             norm_matrix[:, j] = matrix[:, j] / np.max(matrix[:, j])
-#         else:
-#             norm_matrix[:, j] = np.min(matrix[:, j]) / matrix[:, j]
-#     return norm_matrix
-
-# def calculate_saw_score(norm_matrix, weights):
-#     return np.dot(norm_matrix, weights)
-
-# def normalize_direct_relation_matrix(matrix):
-#     max_row_sum = np.max(np.sum(matrix, axis=1))
-#     return matrix / max_row_sum
-
-# def total_relation_matrix(Y):
-#     I = np.identity(Y.shape[0])
-#     return np.dot(Y, np.linalg.inv(I - Y))
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -38,8 +19,8 @@ def home():
 
 
 #saw
-# Define your criteria info somewhere accessible
-CRITERIA = [
+# Daftar kriteria dengan bobot dan tipe
+criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15},
     {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10},
     {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35},
@@ -49,10 +30,8 @@ CRITERIA = [
 ]
 
 def normalize(matrix, types):
-    # matrix: list of list of float (rows: alternatives, cols: criteria)
-    # types: list of 'Benefit' or 'Cost'
     normalized = []
-    matrix_T = list(zip(*matrix))  # transpose to work column-wise
+    matrix_T = list(zip(*matrix))  # Transpose untuk kolom
 
     for j, col in enumerate(matrix_T):
         tipe = types[j]
@@ -65,54 +44,57 @@ def normalize(matrix, types):
             norm_col = [min_val / x if x != 0 else 0 for x in col]
         normalized.append(norm_col)
     
-    return list(map(list, zip(*normalized)))  # transpose back
+    return list(map(list, zip(*normalized)))  # Transpose kembali
 
 def calculate_saw(matrix, weights, types):
     normalized = normalize(matrix, types)
-    results = []
+    weighted_matrix = []
+    scores = []
     for row in normalized:
-        score = sum(w * r for w, r in zip(weights, row))
-        results.append(score)
-    return results, normalized
+        weighted_row = [w * r for w, r in zip(weights, row)]
+        weighted_matrix.append(weighted_row)
+        scores.append(sum(weighted_row))
+    return scores, normalized, weighted_matrix
+
+# @app.route('/')
+# def home():
+#     return render_template('home.html')
 
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
-    results = None
-    normalized_matrix = None
-    alternatives = []
     errors = []
-    
+    alternatives = []
+    matrix = []
+    normalized_matrix = []
+    weighted_matrix = []
+    scores = []
+    ranked = []
+
     if request.method == 'POST':
-        # Handle CSV upload
+        # Penanganan upload CSV
         if 'csv_file' in request.files and request.files['csv_file'].filename != '':
             csv_file = request.files['csv_file']
             try:
                 stream = io.StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
                 reader = csv.reader(stream)
                 header = next(reader)
-                
-                # Expecting header: Alternatif, IPS, Aktif Kemahasiswaan, Ekonomi, Semester, Prestasi, Motivasi
                 alternatives = []
                 matrix = []
                 for row in reader:
                     alternatives.append(row[0])
-                    # Convert criteria values to float
                     matrix.append([float(x) for x in row[1:]])
             except Exception as e:
-                errors.append("Error reading CSV file: " + str(e))
+                errors.append("Error membaca file CSV: " + str(e))
         else:
-            # Manual input parsing
-            # Number of alternatives
+            # Input manual
             alt_count = int(request.form.get('alt_count', 0))
-            alternatives = []
-            matrix = []
             for i in range(alt_count):
                 alt_name = request.form.get(f'alt_name_{i}', '').strip()
                 if alt_name == '':
                     alt_name = f'A{i+1}'
                 alternatives.append(alt_name)
                 row = []
-                for j in range(len(CRITERIA)):
+                for j in range(len(criteria)):
                     val_str = request.form.get(f'value_{i}_{j}', '0').strip()
                     try:
                         val = float(val_str)
@@ -121,23 +103,30 @@ def saw():
                     row.append(val)
                 matrix.append(row)
 
-        # If matrix and alternatives loaded
         if alternatives and matrix:
-            weights = [c['bobot'] for c in CRITERIA]
-            types = [c['tipe'] for c in CRITERIA]
+            weights = [c['bobot'] for c in criteria]
+            types = [c['tipe'] for c in criteria]
             try:
-                results, normalized_matrix = calculate_saw(matrix, weights, types)
-                # Sort alternatives by descending score
-                ranked = sorted(zip(alternatives, results), key=lambda x: x[1], reverse=True)
+                scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
+                ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
             except Exception as e:
-                errors.append("Error calculating SAW: " + str(e))
+                errors.append("Error dalam perhitungan SAW: " + str(e))
         else:
-            errors.append("No input data provided.")
+            errors.append("Data input tidak tersedia.")
 
         if errors:
             flash(' '.join(errors), 'error')
+
+        return render_template('saw.html',
+                               criteria=criteria,
+                               alternatives=alternatives,
+                               matrix=matrix,
+                               normalized_matrix=normalized_matrix,
+                               weighted_matrix=weighted_matrix,
+                               scores=scores,
+                               ranked=ranked)
     else:
-        # Default manual alternatives to display initially (your example data)
+        # Data default untuk tampilan awal
         alternatives = ['A1', 'A2', 'A3', 'A4', 'A5']
         matrix = [
             [3.8, 4, 2, 7, 4, 5],
@@ -146,18 +135,19 @@ def saw():
             [3.9, 2, 4, 4, 4, 5],
             [3.6, 3, 2, 7, 5, 3],
         ]
-        weights = [c['bobot'] for c in CRITERIA]
-        types = [c['tipe'] for c in CRITERIA]
-        results, normalized_matrix = calculate_saw(matrix, weights, types)
-        ranked = sorted(zip(alternatives, results), key=lambda x: x[1], reverse=True)
+        weights = [c['bobot'] for c in criteria]
+        types = [c['tipe'] for c in criteria]
+        scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
+        ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
 
-    return render_template('saw.html', criteria=CRITERIA, alternatives=alternatives, matrix=matrix if 'matrix' in locals() else None,
-                           normalized=normalized_matrix, results=results, ranked=ranked if 'ranked' in locals() else None)
-
-
-
-
-
+        return render_template('saw.html',
+                               criteria=criteria,
+                               alternatives=alternatives,
+                               matrix=matrix,
+                               normalized_matrix=normalized_matrix,
+                               weighted_matrix=weighted_matrix,
+                               scores=scores,
+                               ranked=ranked)
 
 if __name__ == '__main__':
     app.run(debug=True)
