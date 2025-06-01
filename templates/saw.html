@@ -7,9 +7,9 @@
   <h2 class="text-3xl font-bold mb-6">SAW Method</h2>
 
   <div class="mb-8">
-    <form method="post" enctype="multipart/form-data" class="mb-6">
+    <form action="/read-excel" method="post" enctype="multipart/form-data" class="mb-6">
       <label class="block font-semibold mb-2">Upload CSV file (optional):</label>
-      <input type="file" name="csv_file" accept=".csv" class="mb-3">
+      <input type="file" name="excel_file" accept=".xlsx, .xls" class="mb-3">
       <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">Upload and Calculate</button>
     </form>
   </div>

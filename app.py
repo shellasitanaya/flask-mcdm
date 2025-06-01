@@ -37,6 +37,15 @@ def home():
     return render_template('home.html')
 
 
+import subprocess as sp
+
+@app.route('/read-excel', methods=['GET', 'POST'])
+def phpexample():
+    out = sp.run(["php", "excelreader.php"], stdout=sp.PIPE)
+    return out.stdout
+
+
+
 #saw
 # Define your criteria info somewhere accessible
 CRITERIA = [
