@@ -1,24 +1,9 @@
-# app.py
-from flask import Flask, render_template, request, redirect, url_for, flash
-import numpy as np
-import pandas as pd
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, flash
 import os
-import csv
-import io
-
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app.secret_key = 'secret-key' 
 
-
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    return render_template('home.html')
-
-
-#saw
 # Daftar kriteria dengan bobot dan tipe
 criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15},
@@ -29,9 +14,10 @@ criteria = [
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20},
 ]
 
+# Normalisai matrix berdasarkan tipe kriteria
 def normalize(matrix, types):
     normalized = []
-    matrix_T = list(zip(*matrix))  # Transpose untuk kolom
+    matrix_T = list(zip(*matrix))  
 
     for j, col in enumerate(matrix_T):
         tipe = types[j]
@@ -43,9 +29,10 @@ def normalize(matrix, types):
             min_val = min(col)
             norm_col = [min_val / x if x != 0 else 0 for x in col]
         normalized.append(norm_col)
-    
-    return list(map(list, zip(*normalized)))  # Transpose kembali
 
+    return list(map(list, zip(*normalized))) 
+
+# Matriks Normalisasi x bobot kriteria 
 def calculate_saw(matrix, weights, types):
     normalized = normalize(matrix, types)
     weighted_matrix = []
@@ -56,10 +43,11 @@ def calculate_saw(matrix, weights, types):
         scores.append(sum(weighted_row))
     return scores, normalized, weighted_matrix
 
-# @app.route('/')
-# def home():
-#     return render_template('home.html')
+@app.route('/')
+def home():
+    return render_template('home.html')
 
+# Inputan dari form 
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
     errors = []
@@ -71,37 +59,21 @@ def saw():
     ranked = []
 
     if request.method == 'POST':
-        # Penanganan upload CSV
-        if 'csv_file' in request.files and request.files['csv_file'].filename != '':
-            csv_file = request.files['csv_file']
-            try:
-                stream = io.StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
-                reader = csv.reader(stream)
-                header = next(reader)
-                alternatives = []
-                matrix = []
-                for row in reader:
-                    alternatives.append(row[0])
-                    matrix.append([float(x) for x in row[1:]])
-            except Exception as e:
-                errors.append("Error membaca file CSV: " + str(e))
-        else:
-            # Input manual
-            alt_count = int(request.form.get('alt_count', 0))
-            for i in range(alt_count):
-                alt_name = request.form.get(f'alt_name_{i}', '').strip()
-                if alt_name == '':
-                    alt_name = f'A{i+1}'
-                alternatives.append(alt_name)
-                row = []
-                for j in range(len(criteria)):
-                    val_str = request.form.get(f'value_{i}_{j}', '0').strip()
-                    try:
-                        val = float(val_str)
-                    except:
-                        val = 0
-                    row.append(val)
-                matrix.append(row)
+        alt_count = int(request.form.get('alt_count', 0))
+        for i in range(alt_count):
+            alt_name = request.form.get(f'alt_name_{i}', '').strip()
+            if alt_name == '':
+                alt_name = f'A{i+1}'
+            alternatives.append(alt_name)
+            row = []
+            for j in range(len(criteria)):
+                val_str = request.form.get(f'value_{i}_{j}', '0').strip()
+                try:
+                    val = float(val_str)
+                except:
+                    val = 0
+                row.append(val)
+            matrix.append(row)
 
         if alternatives and matrix:
             weights = [c['bobot'] for c in criteria]
@@ -117,37 +89,14 @@ def saw():
         if errors:
             flash(' '.join(errors), 'error')
 
-        return render_template('saw.html',
-                               criteria=criteria,
-                               alternatives=alternatives,
-                               matrix=matrix,
-                               normalized_matrix=normalized_matrix,
-                               weighted_matrix=weighted_matrix,
-                               scores=scores,
-                               ranked=ranked)
-    else:
-        # Data default untuk tampilan awal
-        alternatives = ['A1', 'A2', 'A3', 'A4', 'A5']
-        matrix = [
-            [3.8, 4, 2, 7, 4, 5],
-            [3.5, 5, 1, 6, 5, 4],
-            [3.2, 3, 3, 5, 3, 4],
-            [3.9, 2, 4, 4, 4, 5],
-            [3.6, 3, 2, 7, 5, 3],
-        ]
-        weights = [c['bobot'] for c in criteria]
-        types = [c['tipe'] for c in criteria]
-        scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
-        ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
-
-        return render_template('saw.html',
-                               criteria=criteria,
-                               alternatives=alternatives,
-                               matrix=matrix,
-                               normalized_matrix=normalized_matrix,
-                               weighted_matrix=weighted_matrix,
-                               scores=scores,
-                               ranked=ranked)
+    return render_template('saw.html',
+                           criteria=criteria,
+                           alternatives=alternatives,
+                           matrix=matrix,
+                           normalized_matrix=normalized_matrix,
+                           weighted_matrix=weighted_matrix,
+                           scores=scores,
+                           ranked=ranked)
 
 if __name__ == '__main__':
     app.run(debug=True)

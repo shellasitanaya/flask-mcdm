@@ -3,46 +3,53 @@
 
 {% block content %}
 <section class="max-w-6xl mx-auto p-6">
-
   <h2 class="text-3xl font-bold mb-6">SAW Method</h2>
 
   <div class="mb-8">
     <form method="post" enctype="multipart/form-data" class="mb-6">
-      <label class="block font-semibold mb-2">Upload CSV file (optional):</label>
+      <label class="block font-semibold mb-2">Upload CSV file:</label>
       <input type="file" name="csv_file" accept=".csv" class="mb-3">
-      <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">Upload and Calculate</button>
+      <button type="submit" class="bg-blue-500 text-white px-5 py-2 rounded hover:bg-blue-700 transition">Upload and
+        Calculate</button>
     </form>
   </div>
 
-  <form method="post" class="mb-10">
-    <input type="hidden" name="alt_count" value="{{ alternatives|length }}">
-
-    <table class="w-full table-auto border-collapse border border-gray-300 mb-6">
+  <form method="post" id="sawForm" class="mb-10">
+    <table class="w-full table-auto border-collapse border border-gray-300 mb-6" id="sawTable">
       <thead>
         <tr class="bg-blue-100">
           <th class="border border-gray-300 px-3 py-2">Alternatif</th>
           {% for c in criteria %}
           <th class="border border-gray-300 px-3 py-2">{{ c.nama }}<br><small>({{ c.tipe }})</small></th>
           {% endfor %}
+          <th class="border border-gray-300 px-3 py-2">Aksi</th>
         </tr>
       </thead>
-      <tbody>
-        {% for i in range(alternatives|length) %}
+      <tbody id="tableBody">
         <tr>
           <td class="border border-gray-300 px-2 py-1 text-center">
-            <input type="text" name="alt_name_{{i}}" value="{{ alternatives[i] }}" class="w-full text-center border rounded px-1 py-1">
+            <input type="text" name="alt_name_0" class="w-full text-center border rounded px-1 py-1">
           </td>
           {% for j in range(criteria|length) %}
           <td class="border border-gray-300 px-2 py-1 text-center">
-            <input type="number" step="any" min="0" name="value_{{i}}_{{j}}" value="{{ matrix[i][j] if matrix else '' }}" class="w-full text-center border rounded px-1 py-1" required>
+            <input type="number" step="any" min="0" name="value_0_{{j}}"
+              class="w-full text-center border rounded px-1 py-1" required>
           </td>
           {% endfor %}
+          <td class="border border-gray-300 px-2 py-1 text-center">
+            <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+          </td>
         </tr>
-        {% endfor %}
       </tbody>
     </table>
 
-    <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition font-semibold">Calculate SAW</button>
+    <button type="button" id="addRowBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">+
+      Add Row</button>
+    <input type="hidden" name="alt_count" id="altCount" value="1">
+
+    <button type="submit"
+      class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition font-semibold mt-4">Calculate
+      SAW</button>
   </form>
 
   {% if ranked %}
@@ -70,11 +77,7 @@
   {% endif %}
 
 
-  
-</section>
-
-
-{% if matrix and normalized_matrix and weighted_matrix and scores %}
+  {% if matrix and normalized_matrix and weighted_matrix and scores %}
 <hr class="my-10 border-t border-gray-400">
 
 <section class="mt-10">
@@ -83,7 +86,7 @@
   <!-- Matriks Keputusan -->
   <h4 class="text-xl font-semibold mt-6 mb-2">1. Matriks Keputusan</h4>
   <table class="w-full border mb-6">
-    <thead class="bg-gray-200">
+    <thead class="bg-blue-200 ">
       <tr>
         <th class="border px-2 py-1">Alternatif</th>
         {% for c in criteria %}
@@ -106,7 +109,7 @@
   <!-- Normalisasi -->
   <h4 class="text-xl font-semibold mt-6 mb-2">2. Matriks Ternormalisasi</h4>
   <table class="w-full border mb-6">
-    <thead class="bg-gray-200">
+    <thead class="bg-blue-200 ">
       <tr>
         <th class="border px-2 py-1">Alternatif</th>
         {% for c in criteria %}
@@ -129,7 +132,7 @@
   <!-- Bobot x Normalisasi -->
   <h4 class="text-xl font-semibold mt-6 mb-2">3. Normalisasi x Bobot</h4>
   <table class="w-full border mb-6">
-    <thead class="bg-gray-200">
+    <thead class="bg-blue-200 ">
       <tr>
         <th class="border px-2 py-1">Alternatif</th>
         {% for c in criteria %}
@@ -152,7 +155,7 @@
   <!-- Nilai Akhir -->
   <h4 class="text-xl font-semibold mt-6 mb-2">4. Nilai Akhir (V<sub>i</sub>)</h4>
   <table class="w-full border mb-6">
-    <thead class="bg-gray-200">
+    <thead class="bg-blue-200 ">
       <tr>
         <th class="border px-2 py-1">Alternatif</th>
         <th class="border px-2 py-1">Skor Akhir (V<sub>i</sub>)</th>
@@ -170,7 +173,59 @@
 </section>
 {% endif %}
 
+</section>
+
+<input type="hidden" id="criteria-count" value="{{ criteria|length|default(0)|int }}">
+
+
+
+
+<script>
+  let rowCount = 1;
+  const altCountInput = document.getElementById('altCount');
+
+  function updateAltCount() {
+    const rowElements = document.querySelectorAll('#tableBody tr');
+    altCountInput.value = rowElements.length;
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click', function () {
+    const tbody = document.getElementById('tableBody');
+    const criteriaCount = parseInt(document.getElementById('criteria-count').value);
+
+    const row = document.createElement('tr');
+
+    let rowHTML = `
+      <td class="border border-gray-300 px-2 py-1 text-center">
+        <input type="text" name="alt_name_${rowCount}" class="w-full text-center border rounded px-1 py-1">
+      </td>`;
+    for (let j = 0; j < criteriaCount; j++) {
+      rowHTML += `
+      <td class="border border-gray-300 px-2 py-1 text-center">
+        <input type="number" step="any" min="0" name="value_${rowCount}_${j}" class="w-full text-center border rounded px-1 py-1" required>
+      </td>`;
+    }
+    rowHTML += `
+      <td class="border border-gray-300 px-2 py-1 text-center">
+        <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+      </td>`;
+
+    row.innerHTML = rowHTML;
+    tbody.appendChild(row);
+    rowCount++;
+    updateAltCount();
+  });
+
+  document.getElementById('tableBody').addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove-row')) {
+      const row = e.target.closest('tr');
+      row.remove();
+      updateAltCount();
+    }
+  });
+
+  updateAltCount();
+</script>
+
+
 {% endblock %}
-
-
-
