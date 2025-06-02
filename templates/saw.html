@@ -6,10 +6,10 @@
   <h2 class="text-3xl font-bold mb-6">SAW Method</h2>
 
   <div class="mb-8">
-    <form action="/read-excel" method="post" enctype="multipart/form-data" class="mb-6">
+    <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="mb-6">
       <label class="block font-semibold mb-2">Upload CSV file (optional):</label>
-      <input type="file" name="excel_file" accept=".xlsx, .xls" class="mb-3">
-      <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">Upload and Calculate</button>
+      <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="mb-3">
+      <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">➠ Upload</button>
     </form>
   </div>
 
@@ -182,6 +182,7 @@
 <script>
   let rowCount = 1;
   const altCountInput = document.getElementById('altCount');
+  const uploadExcelForm = document.getElementById('uploadExcelForm');
 
   function updateAltCount() {
     const rowElements = document.querySelectorAll('#tableBody tr');
@@ -224,6 +225,102 @@
   });
 
   updateAltCount();
+
+
+
+  uploadExcelForm.addEventListener('submit', async function (e) {
+    e.preventDefault(); // Prevent default form submission
+
+    const formData = new FormData(this); // 'this' refers to the form element
+
+    // Get the file input itself
+    const fileInput = this.querySelector('input[type="file"]');
+    if (fileInput.files.length === 0) {
+      Swal.fire({
+        title: "Error",
+        text: "No file selected.",
+        icon: "error"
+      });
+
+      return;
+    }
+
+
+    try {
+      Swal.fire({
+        title: "Continue?",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        text: "All data in table will be replaced with your excel file data.",
+        icon: "question"
+      }).then(async (result) => {
+
+        if (result.isConfirmed) {
+          
+          const response = await fetch('/read-excel', { // Send to your Flask route
+            method: 'POST',
+            body: formData, // FormData handles 'multipart/form-data' correctly
+          });
+
+          const resultt = await response.json(); // Parse JSON response
+
+          if (response.ok) {
+            // console.log(resultt);
+
+            const tbody = document.getElementById('tableBody');
+            const criteriaCount = parseInt(document.getElementById('criteria-count').value);
+
+
+            // empty out entries
+            tbody.innerHTML=``;
+            rowCount = 0;
+
+            resultt.forEach(alternative => {
+              const row = document.createElement('tr');
+
+              let rowHTML = `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <input type="text" name="alt_name_${rowCount}" class="w-full text-center border rounded px-1 py-1" value="${alternative[0]}">
+                </td>`;
+              for (let j = 0; j < criteriaCount; j++) {
+                rowHTML += `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <input type="number" step="any" min="0" name="value_${rowCount}_${j}" class="w-full text-center border rounded px-1 py-1" required value="${alternative[j+1]}">
+                </td>`;
+              }
+              rowHTML += `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+                </td>`;
+
+              row.innerHTML = rowHTML;
+              tbody.appendChild(row);
+              rowCount++;
+              updateAltCount();
+            });
+              
+              
+
+              
+
+          } else {
+            
+            Swal.fire({
+              title: "Error",
+              text: "Failed in reading file.",
+              icon: "error"
+            });
+            
+          }
+        } 
+      });
+    } catch (error) {
+      console.error('Network or parsing error:', error);
+      uploadMessageDiv.innerHTML = `<span class="text-red-600">An unexpected client-side error occurred: ${error.message}</span>`;
+      if (rowCount === 0) addRow(); // Ensure at least one row exists for manual input
+    }
+  });
+
 </script>
 
 

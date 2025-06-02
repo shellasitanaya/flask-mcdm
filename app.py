@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request, flash, jsonify
 import os
+import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 app.secret_key = 'secret-key' 
@@ -97,6 +99,61 @@ def saw():
                            weighted_matrix=weighted_matrix,
                            scores=scores,
                            ranked=ranked)
+
+
+
+
+
+
+
+@app.route('/read-excel', methods=['POST'])
+def phpexample():
+     
+    file = request.files['excel_file']
+
+    if not file:
+        return jsonify({"error": "No selected file"}), 400
+    
+    filename = file.filename
+
+    if filename.endswith(('.xlsx', '.xls')):
+        try:
+            df = pd.read_excel(file)
+        except Exception as e:
+            return jsonify({"error": f"Error reading Excel file: {e}"}), 500
+    elif filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+        except Exception as e:
+            return jsonify({"error": f"Error reading CSV file: {e}"}), 500
+    else:
+        return jsonify({"error": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}), 400
+    
+    data = df.values.tolist()
+
+    for idx1, row in enumerate(data):
+        for idx2, val in enumerate(row):
+            if idx2 != 0:
+                try:
+                    converted_val = float(val)
+
+                    # Now, check if the converted float is NaN
+                    # Use np.isnan() as it's designed for NumPy NaNs (which pandas uses)
+                    if np.isnan(converted_val):
+                        data[idx1][idx2] = 0.0 # Replace NaN with 0.0
+                    else:
+                        data[idx1][idx2] = converted_val # Keep the converted float
+                except (ValueError, TypeError):
+                    # This 'except' block catches:
+                    # - Strings that cannot be converted to float (e.g., "hello", "N/A")
+                    # - None values (float(None) raises TypeError)
+                    data[idx1][idx2] = 0.0
+
+    return jsonify(data)
+
+
+    # out = sp.run(["php", "excelreader.php"], stdout=sp.PIPE)
+    # return out.stdout
 
 if __name__ == '__main__':
     app.run(debug=True)
