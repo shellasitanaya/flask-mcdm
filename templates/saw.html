@@ -194,10 +194,8 @@
 
     <button type="button" id="addRowBtn"
       class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2">+
-      Tambah Baris</button>
-    <input type="hidden" name="alt_count" id="altCount" value="{{ alternatives|length|default(0) }}"> {# Default to 0,
-    will be updated by JS #}
-
+      Tambah Alternatif</button>
+    <input type="hidden" name="alt_count" id="altCount" value="{{ alternatives|length|default(0) }}"> 
     <button type="submit" id="submitSawBtn"
       class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold mt-4 shadow-md">
       Hitung SAW
