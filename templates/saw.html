@@ -14,164 +14,238 @@
     </form>
   </div>
 
-  <form method="post" id="sawForm" class="mb-10">
-    <table class="w-full table-auto border-collapse border border-gray-300 mb-6" id="sawTable">
+  <!-- Form Kriteria -->
+  <form method="post" id="criteriaForm" class="w-full mb-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-800">Kriteria Penilaian</h2>
+
+    <table class="w-full table-auto border-collapse border border-gray-300 mb-4">
       <thead>
-        <tr class="bg-blue-100">
-          <th class="border border-gray-300 px-3 py-2">Alternatif</th>
-          {% for c in criteria %}
-          <th class="border border-gray-300 px-3 py-2">{{ c.nama }}<br><small>({{ c.tipe }})</small></th>
-          {% endfor %}
-          <th class="border border-gray-300 px-3 py-2">Aksi</th>
+        <tr class="bg-blue-100 text-gray-800">
+          <th class="border border-gray-300 px-3 py-2 text-left">Nama Kriteria</th>
+          <th class="border border-gray-300 px-3 py-2 text-left">Bobot</th>
+          <th class="border border-gray-300 px-3 py-2 text-left">Tipe</th>
+          <th class="border border-gray-300 px-3 py-2 text-center">Aksi</th>
         </tr>
       </thead>
-      <tbody id="tableBody">
+      <tbody id="criteriaList">
+        {% for c in criteria %}
+          {% set i = loop.index0 %}
         <tr>
-          <td class="border border-gray-300 px-2 py-1 text-center">
-            <input type="text" name="alt_name_0" class="w-full text-center border rounded px-1 py-1">
+          <td class="border border-gray-300 px-3 py-2">
+            <input type="text" name="criteria_name_{{i}}" class="w-full border border-gray-300 rounded px-2 py-1"
+              value="{{ c.nama }}">
           </td>
-          {% for j in range(criteria|length) %}
-          <td class="border border-gray-300 px-2 py-1 text-center">
-            <input type="number" step="any" min="0" name="value_0_{{j}}"
-              class="w-full text-center border rounded px-1 py-1" required>
+          <td class="border border-gray-300 px-3 py-2">
+            <input type="number" name="criteria_weight_{{i}}" step="0.01" min="0" max="1"
+              class="w-full border border-gray-300 rounded px-2 py-1" value="{{ c.bobot }}">
           </td>
-          {% endfor %}
-          <td class="border border-gray-300 px-2 py-1 text-center">
-            <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+          <td class="border border-gray-300 px-3 py-2">
+            <select name="criteria_type_{{i}}" class="w-full border border-gray-300 rounded px-2 py-1">
+              <option value="Benefit" {% if c.tipe=='Benefit' %}selected{% endif %}>Benefit</option>
+              <option value="Cost" {% if c.tipe=='Cost' %}selected{% endif %}>Cost</option>
+            </select>
           </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <button type="button" id="addRowBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">+
-      Add Row</button>
-    <input type="hidden" name="alt_count" id="altCount" value="1">
-
-    <button type="submit"
-      class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition font-semibold mt-4">Calculate
-      SAW</button>
-  </form>
-
-  {% if ranked %}
-  <section>
-    <h3 class="text-2xl font-bold mb-4">Ranking Results</h3>
-    <table class="w-full table-auto border-collapse border border-gray-300">
-      <thead>
-        <tr class="bg-blue-200">
-          <th class="border border-gray-300 px-3 py-2">Rank</th>
-          <th class="border border-gray-300 px-3 py-2">Alternatif</th>
-          <th class="border border-gray-300 px-3 py-2">Score (Vi)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for alt, score in ranked %}
-        <tr>
-          <td class="border border-gray-300 px-3 py-2 text-center">{{ loop.index }}</td>
-          <td class="border border-gray-300 px-3 py-2">{{ alt }}</td>
-          <td class="border border-gray-300 px-3 py-2 text-center">{{ '%.4f'|format(score) }}</td>
+          <td class="border border-gray-300 px-3 py-2 text-center">
+            <button type="button" class="text-red-500 hover:text-red-700" onclick="removeRow(this)">Hapus</button>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
+
     </table>
-  </section>
-  {% endif %}
 
+    <button type="button" onclick="addCriteriaRow()"
+      class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">+ Tambah Kriteria</button>
 
-  {% if matrix and normalized_matrix and weighted_matrix and scores %}
-<hr class="my-10 border-t border-gray-400">
+    <input type="hidden" name="form_type" value="criteria">
 
-<section class="mt-10">
-  <h3 class="text-2xl font-bold mb-4">Langkah-langkah Perhitungan SAW</h3>
+    <button type="submit" onclick="submitCriteria()"
+      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold mt-4">Submit
+      Kriteria</button>
 
-  <!-- Matriks Keputusan -->
-  <h4 class="text-xl font-semibold mt-6 mb-2">1. Matriks Keputusan</h4>
-  <table class="w-full border mb-6">
-    <thead class="bg-blue-200 ">
-      <tr>
-        <th class="border px-2 py-1">Alternatif</th>
+    <div id="submittedCriteria" class="mt-6">
+      <h3 class="text-lg font-bold mb-2 text-gray-800">Daftar Kriteria yang Disubmit:</h3>
+      <ul class="list-disc pl-5 text-gray-700" id="criteriaSummaryList">
         {% for c in criteria %}
-        <th class="border px-2 py-1">{{ c.nama }}</th>
+        <li>{{ c.nama }} - Bobot: {{ c.bobot }} - Tipe: {{ c.tipe }}</li>
         {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(alternatives|length) %}
-      <tr>
-        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
-        {% for j in range(criteria|length) %}
-        <td class="border px-2 py-1 text-center">{{ matrix[i][j] }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </ul>
+    </div>
 
-  <!-- Normalisasi -->
-  <h4 class="text-xl font-semibold mt-6 mb-2">2. Matriks Ternormalisasi</h4>
-  <table class="w-full border mb-6">
-    <thead class="bg-blue-200 ">
-      <tr>
-        <th class="border px-2 py-1">Alternatif</th>
-        {% for c in criteria %}
-        <th class="border px-2 py-1">{{ c.nama }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(alternatives|length) %}
-      <tr>
-        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
-        {% for j in range(criteria|length) %}
-        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(normalized_matrix[i][j]) }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <form id="criteriaForm">: <input type="hidden" name="criteria_count_input" id="criteriaCountInput" value="1">
 
-  <!-- Bobot x Normalisasi -->
-  <h4 class="text-xl font-semibold mt-6 mb-2">3. Normalisasi x Bobot</h4>
-  <table class="w-full border mb-6">
-    <thead class="bg-blue-200 ">
-      <tr>
-        <th class="border px-2 py-1">Alternatif</th>
-        {% for c in criteria %}
-        <th class="border px-2 py-1">{{ c.nama }}<br><small>x {{ c.bobot }}</small></th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(alternatives|length) %}
-      <tr>
-        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
-        {% for j in range(criteria|length) %}
-        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(weighted_matrix[i][j]) }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    </form>
+    <!-- 
+<div id="submittedCriteria" class="mt-6 hidden">
+  <h3 class="text-lg font-bold mb-2 text-gray-800">Daftar Kriteria yang Disubmit:</h3>
+  <ul class="list-disc pl-5 text-gray-700" id="criteriaSummaryList"></ul>
+</div> -->
 
-  <!-- Nilai Akhir -->
-  <h4 class="text-xl font-semibold mt-6 mb-2">4. Nilai Akhir (V<sub>i</sub>)</h4>
-  <table class="w-full border mb-6">
-    <thead class="bg-blue-200 ">
-      <tr>
-        <th class="border px-2 py-1">Alternatif</th>
-        <th class="border px-2 py-1">Skor Akhir (V<sub>i</sub>)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(alternatives|length) %}
-      <tr>
-        <td class="border px-2 py-1">{{ alternatives[i] }}</td>
-        <td class="border px-2 py-1 text-center">{{ '%.4f'|format(scores[i]) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
-{% endif %}
+
+
+
+
+    <form method="post" id="sawForm" class="mb-10">
+      <table class="w-full table-auto border-collapse border border-gray-300 mb-6" id="sawTable">
+        <thead>
+          <tr class="bg-blue-100">
+            <th class="border border-gray-300 px-3 py-2">Alternatif (Nama Peserta)</th>
+            {% for c in criteria %}
+            <th class="border border-gray-300 px-3 py-2">{{ c.nama }}<br><small>({{ c.tipe }})</small></th>
+            {% endfor %}
+            <th class="border border-gray-300 px-3 py-2">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td class="border border-gray-300 px-2 py-1 text-center">
+              <input type="text" name="alt_name_0" class="w-full text-center border rounded px-1 py-1">
+            </td>
+            {% for j in range(criteria|length) %}
+            <td class="border border-gray-300 px-2 py-1 text-center">
+              <input type="number" step="any" min="0" name="value_0_{{j}}"
+                class="w-full text-center border rounded px-1 py-1" required>
+            </td>
+            {% endfor %}
+            <td class="border border-gray-300 px-2 py-1 text-center">
+              <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button type="button" id="addRowBtn"
+        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">+
+        Add Row</button>
+      <input type="hidden" name="alt_count" id="altCount" value="1">
+
+      <input type="hidden" name="form_type" value="saw">
+
+      <button type="submit"
+        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition font-semibold mt-4">Calculate
+        SAW</button>
+    </form>
+
+    {% if ranked %}
+    <section>
+      <h3 class="text-2xl font-bold mb-4">Ranking Results</h3>
+      <table class="w-full table-auto border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-blue-200">
+            <th class="border border-gray-300 px-3 py-2">Rank</th>
+            <th class="border border-gray-300 px-3 py-2">Alternatif</th>
+            <th class="border border-gray-300 px-3 py-2">Score (Vi)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alt, score in ranked %}
+          <tr>
+            <td class="border border-gray-300 px-3 py-2 text-center">{{ loop.index }}</td>
+            <td class="border border-gray-300 px-3 py-2">{{ alt }}</td>
+            <td class="border border-gray-300 px-3 py-2 text-center">{{ '%.4f'|format(score) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+
+    {% if matrix and normalized_matrix and weighted_matrix and scores %}
+    <hr class="my-10 border-t border-gray-400">
+
+    <section class="mt-10">
+      <h3 class="text-2xl font-bold mb-4">Langkah-langkah Perhitungan SAW</h3>
+
+      <!-- Matriks Keputusan -->
+      <h4 class="text-xl font-semibold mt-6 mb-2">1. Matriks Keputusan</h4>
+      <table class="w-full border mb-6">
+        <thead class="bg-blue-200 ">
+          <tr>
+            <th class="border px-2 py-1">Alternatif</th>
+            {% for c in criteria %}
+            <th class="border px-2 py-1">{{ c.nama }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(alternatives|length) %}
+          <tr>
+            <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+            {% for j in range(criteria|length) %}
+            <td class="border px-2 py-1 text-center">{{ matrix[i][j] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Normalisasi -->
+      <h4 class="text-xl font-semibold mt-6 mb-2">2. Matriks Ternormalisasi</h4>
+      <table class="w-full border mb-6">
+        <thead class="bg-blue-200 ">
+          <tr>
+            <th class="border px-2 py-1">Alternatif</th>
+            {% for c in criteria %}
+            <th class="border px-2 py-1">{{ c.nama }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(alternatives|length) %}
+          <tr>
+            <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+            {% for j in range(criteria|length) %}
+            <td class="border px-2 py-1 text-center">{{ '%.4f'|format(normalized_matrix[i][j]) }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Bobot x Normalisasi -->
+      <h4 class="text-xl font-semibold mt-6 mb-2">3. Normalisasi x Bobot</h4>
+      <table class="w-full border mb-6">
+        <thead class="bg-blue-200 ">
+          <tr>
+            <th class="border px-2 py-1">Alternatif</th>
+            {% for c in criteria %}
+            <th class="border px-2 py-1">{{ c.nama }}<br><small>x {{ c.bobot }}</small></th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(alternatives|length) %}
+          <tr>
+            <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+            {% for j in range(criteria|length) %}
+            <td class="border px-2 py-1 text-center">{{ '%.4f'|format(weighted_matrix[i][j]) }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Nilai Akhir -->
+      <h4 class="text-xl font-semibold mt-6 mb-2">4. Nilai Akhir (V<sub>i</sub>)</h4>
+      <table class="w-full border mb-6">
+        <thead class="bg-blue-200 ">
+          <tr>
+            <th class="border px-2 py-1">Alternatif</th>
+            <th class="border px-2 py-1">Skor Akhir (V<sub>i</sub>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(alternatives|length) %}
+          <tr>
+            <td class="border px-2 py-1">{{ alternatives[i] }}</td>
+            <td class="border px-2 py-1 text-center">{{ '%.4f'|format(scores[i]) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
 
 </section>
 
@@ -225,6 +299,83 @@
   });
 
   updateAltCount();
+
+
+  // Di dalam script tag saw.html
+  let criteriaRowCounter = 1; // Untuk unique name, sesuaikan dengan jumlah default row
+  // Panggil ini saat init dan setelah tambah/hapus baris kriteria
+  function updateCriteriaCountInput() {
+    const criteriaRows = document.querySelectorAll('#criteriaList tr');
+    document.getElementById('criteriaCountInput').value = criteriaRows.length;
+    // Update juga variabel global JS criteriaCount yang digunakan untuk penamaan field baru
+    criteriaCount = criteriaRows.length; // Ganti nama var global jika beda
+  }
+
+  let criteriaCount = 1;
+
+  function addCriteriaRow() {
+    const tbody = document.getElementById("criteriaList");
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td class="border border-gray-300 px-3 py-2">
+        <input type="text" name="criteria_name_${criteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1" placeholder="Nama Kriteria">
+      </td>
+      <td class="border border-gray-300 px-3 py-2">
+        <input type="number" name="criteria_weight_${criteriaCount}" step="0.01" min="0" max="1" class="w-full border border-gray-300 rounded px-2 py-1" placeholder="0.00">
+      </td>
+      <td class="border border-gray-300 px-3 py-2">
+        <select name="criteria_type_${criteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1">
+          <option value="Benefit">Benefit</option>
+          <option value="Cost">Cost</option>
+        </select>
+      </td>
+      <td class="border border-gray-300 px-3 py-2 text-center">
+        <button type="button" class="text-red-500 hover:text-red-700" onclick="removeRow(this)">Hapus</button>
+      </td>
+    `;
+
+
+    tbody.appendChild(row);
+    updateCriteriaCountInput();
+
+    // criteriaCount++;
+  }
+
+  function removeRow(button) {
+    const row = button.closest("tr");
+    row.remove();
+    updateCriteriaCountInput();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    updateCriteriaCountInput();
+    // updateAltCount(); // Jika Anda ingin altCount juga diinisialisasi
+  });
+
+  function submitCriteria() {
+    const rows = document.querySelectorAll('#criteriaList tr');
+    const listContainer = document.getElementById('criteriaSummaryList');
+    listContainer.innerHTML = "";
+
+    rows.forEach((row, index) => {
+      const name = row.querySelector(`[name^="criteria_name_"]`)?.value;
+      const weight = row.querySelector(`[name^="criteria_weight_"]`)?.value;
+      const type = row.querySelector(`[name^="criteria_type_"]`)?.value;
+
+      if (name && weight && type) {
+        const li = document.createElement("li");
+        li.textContent = `${name} - Bobot: ${weight}, Tipe: ${type}`;
+        listContainer.appendChild(li);
+      }
+    });
+
+    document.getElementById("submittedCriteria").classList.remove("hidden");
+  }
+
+
+
 </script>
 
 

@@ -15,12 +15,15 @@
       <nav class="space-x-4">
         <a href="#home" class="text-gray-700 hover:text-blue-600">Home</a>
         <a href="#methods" class="text-gray-700 hover:text-blue-600">Methods</a>
+        <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-blue-600">Logout</a>
+
+
       </nav>
     </div>
   </header>
 
   <!-- MAIN CONTENT -->
-  <main class="pt-24 pb-12 min-h-screen">
+  <main class=" min-h-screen">
     {% block content %}
     {% endblock %}
   </main>
