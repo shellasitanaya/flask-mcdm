@@ -50,12 +50,32 @@ def calculate_saw(matrix, weights, types):
 def home():
     return render_template('home.html')
 
-@app.route('/logout')
-def logout():
-    # Hapus baris session.clear() karena Anda tidak ingin menggunakan session
-    flash('Anda telah keluar.', 'info')
-    return render_template('home.html')
+@app.context_processor
+def utility_processor():
+    def get_placeholder_range(criteria_name):
+        criteria_name_lower = criteria_name.lower()
+        if criteria_name_lower == 'ips':
+            return '0-4'
+        elif criteria_name_lower == 'semester':
+            return '1-14'
+        elif criteria_name_lower in ['aktif kemahasiswaan', 'kondisi ekonomi', 'berprestasi', 'motivasi']:
+            return '1-5'
+        else:
+            return 'Nilai'
 
+    # Tambahkan ini untuk mengekspor data placeholder ke JS
+    placeholder_data = {
+        'ips': '0-4',
+        'semester': '1-14',
+        'aktif kemahasiswaan': '1-5',
+        'kondisi ekonomi': '1-5',
+        'berprestasi': '1-5',
+        'motivasi': '1-5',
+        # Anda mungkin ingin menambahkan 'default' juga jika ada kriteria lain
+    }
+    
+    return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
+    
 # Inputan dari form
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
