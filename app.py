@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, flash, session 
+from flask import Flask, render_template, request, flash#, session # <--- HAPUS SESSION IMPORT
+
 import os
 
 app = Flask(__name__)
-app.secret_key = 'secret-key' 
+app.secret_key = 'secret-key'
 
 # Daftar kriteria dengan bobot dan tipe
 default_criteria = [
@@ -14,39 +15,27 @@ default_criteria = [
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20},
 ]
 
-
-
-
-
-
-# @app.route('/submit-criteria', methods=['POST'])
-# def submit_criteria():
-#     data = request.get_json()
-#     criteria = data.get('criteria', [])
-#     print("Data kriteria diterima:", criteria)
-
-#     # Lakukan sesuatu dengan data, misalnya simpan ke database
-#     return jsonify({'message': 'Kriteria berhasil diterima!', 'jumlah': len(criteria)})
-
 # Normalisai matrix berdasarkan tipe kriteria
 def normalize(matrix, types):
     normalized = []
-    matrix_T = list(zip(*matrix))  
+    matrix_T = list(zip(*matrix))
 
     for j, col in enumerate(matrix_T):
         tipe = types[j]
         col = list(col)
         if tipe == 'Benefit':
             max_val = max(col)
+            # Handle case where all values are zero for a benefit criterion
             norm_col = [x / max_val if max_val != 0 else 0 for x in col]
         else:  # Cost
             min_val = min(col)
+            # Handle case where min_val is 0 and x is 0
             norm_col = [min_val / x if x != 0 else 0 for x in col]
         normalized.append(norm_col)
 
-    return list(map(list, zip(*normalized))) 
+    return list(map(list, zip(*normalized)))
 
-# Matriks Normalisasi x bobot kriteria 
+# Matriks Normalisasi x bobot kriteria
 def calculate_saw(matrix, weights, types):
     normalized = normalize(matrix, types)
     weighted_matrix = []
@@ -61,12 +50,13 @@ def calculate_saw(matrix, weights, types):
 def home():
     return render_template('home.html')
 
-# @app.route('/logout')
-# def logout():
-#     session.clear()  # Hapus semua session, atau bisa juga session.pop('criteria', None)
-#     return render_template('home.html')# Ganti 'login' sesuai nama route login kamu
+@app.route('/logout')
+def logout():
+    # Hapus baris session.clear() karena Anda tidak ingin menggunakan session
+    flash('Anda telah keluar.', 'info')
+    return render_template('home.html')
 
-# Inputan dari form 
+# Inputan dari form
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
     errors = []
@@ -76,94 +66,96 @@ def saw():
     weighted_matrix = []
     scores = []
     ranked = []
-    # criteria = session.get('criteria', []) 
-    
 
-    if 'criteria' not in session:
-        session['criteria'] = default_criteria.copy()
-
-    criteria = session['criteria']
+    # --- Bagian PENTING yang berubah: Inisialisasi Kriteria ---
+    # Jika GET request, gunakan default_criteria.
+    # Jika POST request, kriteria akan dibaca dari form_type yang sesuai.
+    criteria = default_criteria.copy()
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
         if form_type == 'criteria':
-            submitted_criteria = [] # Tampung kriteria baru dari form
-            criteria_count_str = request.form.get('criteria_count_input') # Anda perlu field ini di form kriteria
+            submitted_criteria = []
+            criteria_count_str = request.form.get('criteria_count_input')
+
             if not criteria_count_str:
                 flash("Jumlah kriteria tidak terkirim.", "error")
-                return render_template('saw.html',
-                           criteria=criteria,
-                           alternatives=alternatives,
-                           matrix=matrix,
-                           normalized_matrix=normalized_matrix,
-                           weighted_matrix=weighted_matrix,
-                           scores=scores,
-                           ranked=ranked) 
-                           # Render ulang dengan kriteria saat ini
-
+                # Jika ada error di sini, tetap tampilkan form dengan kriteria yang sedang diinput
+                # agar user bisa koreksi. Tidak perlu 'return render_template' di setiap error
+                # karena akan di-handle di akhir fungsi.
+            
             try:
                 criteria_count = int(criteria_count_str)
             except ValueError:
                 flash("Jumlah kriteria tidak valid.", "error")
-                return render_template('saw.html',
-                           criteria=criteria,
-                           alternatives=alternatives,
-                           matrix=matrix,
-                           normalized_matrix=normalized_matrix,
-                           weighted_matrix=weighted_matrix,
-                           scores=scores,
-                           ranked=ranked)
+                criteria_count = 0
 
             total_bobot = 0
             for i in range(criteria_count):
                 name = request.form.get(f'criteria_name_{i}', '').strip()
                 bobot_str = request.form.get(f'criteria_weight_{i}', '0')
-                tipe = request.form.get(f'criteria_type_{i}', 'Benefit').strip() # Perhatikan 'criteria_type_i' bukan 'tipe'
+                tipe = request.form.get(f'criteria_type_{i}', 'Benefit').strip()
 
                 if not name:
-                    errors.append(f"Kriteria harus diisi.")
-                    # name = f'K{i+10}' # Default name jika kosong
+                    errors.append(f"Nama kriteria ke-{i+1} harus diisi.")
                 if not bobot_str:
                     errors.append(f"Bobot untuk kriteria '{name or f'ke-{i+1}'}' harus diisi.")
                 if not tipe:
                     errors.append(f"Tipe untuk kriteria '{name or f'ke-{i+1}'}' harus dipilih.")
+                
                 try:
                     bobot = float(bobot_str)
                     if not (0 <= bobot <= 1):
-                        errors.append(f"Bobot untuk {name} harus antara 0 dan 1.")
+                        errors.append(f"Bobot untuk '{name}' harus antara 0 dan 1.")
                     total_bobot += bobot
                 except ValueError:
                     bobot = 0
-                    errors.append(f"Bobot untuk {name} tidak valid.")
+                    errors.append(f"Bobot untuk '{name}' tidak valid.")
+
                 submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe})
 
-            if abs(total_bobot - 1.0) > 0.001 and submitted_criteria: # Toleransi kecil
-                 errors.append(f"Total bobot kriteria ({total_bobot}) harus sama dengan 1.")
+            if submitted_criteria and abs(total_bobot - 1.0) > 0.001:
+                errors.append(f"Total bobot kriteria ({total_bobot:.2f}) harus sama dengan 1.")
 
             if errors:
                 flash(' '.join(errors), 'error')
-                # Tetap gunakan submitted_criteria agar user bisa koreksi, jangan revert ke session lama
-                criteria = submitted_criteria
+                criteria = submitted_criteria # Gunakan kriteria yang disubmit (meskipun ada error)
             else:
-                criteria = submitted_criteria # Gunakan kriteria baru yg disubmit
-                session['criteria'] = criteria # Simpan ke session
-                flash('Kriteria berhasil disubmit!', 'success')
-            # Setelah submit kriteria, biasanya kita ingin user lanjut isi alternatif
-            # Jadi, render template dengan kriteria yang baru disubmit
-            return render_template('saw.html',
-                           criteria=criteria,
-                           alternatives=alternatives,
-                           matrix=matrix,
-                           normalized_matrix=normalized_matrix,
-                           weighted_matrix=weighted_matrix,
-                           scores=scores,
-                           ranked=ranked)
-
+                criteria = submitted_criteria # Gunakan kriteria baru yang berhasil
+                # Hapus baris ini: session['criteria'] = criteria # <--- HAPUS INI
+                flash('Kriteria berhasil disimpan!', 'success')
+            
+            # Tidak perlu `return render_template` di sini. Biarkan alur kode berlanjut
+            # ke `return render_template` di akhir fungsi, yang akan menggunakan
+            # nilai `criteria` yang sudah diupdate.
 
 
         elif form_type == 'saw':
-    # Ambil 'criteria' dari session di awal fungsi 'saw()'
+            # --- Perubahan utama: Membangun kembali 'criteria' dari hidden inputs ---
+            existing_criteria_count_str = request.form.get('existing_criteria_count', '0')
+            try:
+                existing_criteria_count = int(existing_criteria_count_str)
+            except ValueError:
+                errors.append("Jumlah kriteria yang disubmit tidak valid.")
+                existing_criteria_count = 0
+            
+            # Bangun ulang list 'criteria' dari hidden inputs
+            criteria = [] # Reset criteria to be built from hidden inputs
+            for i in range(existing_criteria_count):
+                name = request.form.get(f'existing_criteria_name_{i}', '').strip()
+                weight_str = request.form.get(f'existing_criteria_weight_{i}', '0').strip()
+                type = request.form.get(f'existing_criteria_type_{i}', 'Benefit').strip()
+                
+                try:
+                    weight = float(weight_str)
+                except ValueError:
+                    weight = 0 # Default jika ada error
+                    errors.append(f"Bobot kriteria '{name}' dari hidden input tidak valid.")
+                
+                criteria.append({'kode': f'C{i+1}', 'nama': name, 'bobot': weight, 'tipe': type})
+            # -----------------------------------------------------------------------
+
             if not criteria:
                 errors.append("Kriteria belum ada. Silakan input kriteria dulu.")
             else:
@@ -174,9 +166,9 @@ def saw():
                         errors.append("Jumlah alternatif harus lebih dari 0.")
                 except ValueError:
                     errors.append("Jumlah alternatif tidak valid.")
-                    alt_count = 0 # Set ke 0 jika tidak valid
+                    alt_count = 0
 
-                if not errors: # Lanjutkan hanya jika tidak ada error dasar seperti jumlah alternatif
+                if not errors:
                     for i in range(alt_count):
                         alt_name = request.form.get(f'alt_name_{i}', '').strip()
                         if not alt_name:
@@ -187,35 +179,37 @@ def saw():
                             val_str = request.form.get(f'value_{i}_{j}', '0').strip()
                             try:
                                 val = float(val_str)
-                                if val < 0: # Asumsi nilai tidak boleh negatif
-                                    errors.append(f"Nilai untuk {alt_name} - {criteria[j]['nama']} tidak boleh negatif.")
-                                    val = 0 # Atau handle error lebih lanjut
+                                if val < 0:
+                                    errors.append(f"Nilai untuk '{alt_name}' - '{criteria[j]['nama']}' tidak boleh negatif.")
+                                    val = 0
                             except ValueError:
                                 val = 0
-                                errors.append(f"Nilai untuk {alt_name} - {criteria[j]['nama']} tidak valid.")
+                                errors.append(f"Nilai untuk '{alt_name}' - '{criteria[j]['nama']}' tidak valid.")
                             row.append(val)
                         matrix.append(row)
 
-                    if not alternatives or not matrix:
-                        errors.append("Data alternatif atau matrix tidak lengkap/kosong.")
+                    if not alternatives or not matrix or len(alternatives) != alt_count or len(matrix) != alt_count:
+                         errors.append("Data alternatif atau matriks tidak lengkap/kosong.")
 
-                # Pindahkan kalkulasi SAW ke luar blok error input, tapi setelah input dibaca
-                if not errors and alternatives and matrix and criteria: # Pastikan semua ada dan tidak ada error sebelumnya
-                    weights = [c['bobot'] for c in criteria]
-                    types = [c['tipe'] for c in criteria]
-                    try:
-                        scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
-                        ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
-                    except Exception as e:
-                        errors.append("Error dalam perhitungan SAW: " + str(e))
-                elif not errors: # Jika tidak ada error input, tapi salah satu dari alternatives, matrix, criteria kosong
-                    errors.append("Data input tidak lengkap untuk perhitungan SAW.")
+                    if not errors and alternatives and matrix and criteria:
+                        weights = [c['bobot'] for c in criteria]
+                        types = [c['tipe'] for c in criteria]
+                        try:
+                            scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
+                            ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
+                            flash('Perhitungan SAW berhasil!', 'success')
+                        except Exception as e:
+                            errors.append("Error dalam perhitungan SAW: " + str(e))
+                    elif not errors:
+                         errors.append("Data input tidak lengkap untuk perhitungan SAW.")
 
             if errors:
                 flash(' '.join(errors), 'error')
-            # Jangan ada pass di sini, biarkan flow ke return render_template
-        # ...
-    
+            
+    # Ini akan dieksekusi untuk GET request dan POST request setelah diproses.
+    # Variabel `criteria` akan berisi default_criteria (GET),
+    # atau hasil submit kriteria (POST criteria),
+    # atau kriteria yang dibangun dari hidden inputs (POST saw).
     return render_template('saw.html',
                            criteria=criteria,
                            alternatives=alternatives,
