@@ -7,7 +7,7 @@
   <title>{% block title %}MCDM App{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- swal -->
-   
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <!-- for chart -->
   <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
@@ -19,16 +19,13 @@
   <!-- NAVBAR -->
   <header class="fixed top-0 w-full bg-white/30 backdrop-blur-lg shadow z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-8">
-      <h1 class="text-2xl font-bold text-blue-600">MCDMApp.</h1>
+        <h1 class="text-2xl font-bold text-blue-600">MCDMApp.</h1>
       <nav class="space-x-4">
         <a href="#home" class="text-gray-700 hover:text-blue-600">Home</a>
         <a href="#methods" class="text-gray-700 hover:text-blue-600">Methods</a>
-
-
       </nav>
     </div>
   </header>
-
   <!-- MAIN CONTENT -->
   <main class=" min-h-screen pt-24">
     {% block content %}
@@ -49,15 +46,14 @@
         <ul class="space-y-2 text-sm">
           <li><a href="#home" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
           <li><a href="#methods" class="text-gray-400 hover:text-white transition-colors">Methods</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
         </ul>
       </div>
       <div>
         <h3 class="text-xl font-bold mb-4">Hubungi Kami</h3>
-         <ul class="space-y-2 text-sm text-gray-400">
-           <li>Email: contact@mcdmapp.com</li>
-           <li>Lokasi: Indonesia</li>
-         </ul>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li>Email: contact@mcdmapp.com</li>
+          <li>Lokasi: Indonesia</li>
+        </ul>
       </div>
     </div>
     <div class="bg-black/50 text-center py-4">

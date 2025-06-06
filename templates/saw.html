@@ -639,16 +639,16 @@
     e.preventDefault(); // Prevent default form submission
 
     // Lakukan validasi HTML5 sebelum menampilkan SweetAlert
-    if (!sawForm.checkValidity()) {
-      Swal.fire({
-        title: 'Peringatan Input!',
-        text: 'Harap isi semua kolom alternatif yang diperlukan.',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Oke'
-      });
-      return;
-    }
+    // if (!sawForm.checkValidity()) {
+    //   Swal.fire({
+    //     title: 'Peringatan Input!',
+    //     text: 'Harap isi semua kolom alternatif yang diperlukan.',
+    //     icon: 'warning',
+    //     confirmButtonColor: '#3085d6',
+    //     confirmButtonText: 'Oke'
+    //   });
+    //   return;
+    // }
 
     Swal.fire({
       title: 'Konfirmasi Perhitungan',
