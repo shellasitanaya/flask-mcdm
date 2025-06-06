@@ -14,10 +14,10 @@ DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
 # Daftar kriteria dengan bobot dan tipe
 default_criteria = [
-    {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (0.00-4.00)"},
+    {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (3.01-4.00)"},
     {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: tidak aktif<br>2: sedikit aktif<br>3: cukup aktif<br>4: aktif<br>5: sangat aktif'},
     {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berkecukupan<br>2: sedikit berkecukupan<br>3: cukup berkecukupan<br>4: bercukupan<br>5: sangat bercukupan"},
-    {'kode': 'C4', 'nama': 'Semester', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (e.g. 8)"},
+    {'kode': 'C4', 'nama': 'Semester', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (2-14)"},
     {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berprestasi<br>2: sedikit berprestasi<br>3: cukup berprestasi<br>4: berprestasi<br>5: sangat berprestasi"},
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: tidak kuat<br>2: kurang kuat<br>3: cukup kuat<br>4: kuat<br>5: sangat kuat"},
 ]
