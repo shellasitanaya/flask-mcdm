@@ -2,6 +2,11 @@ from flask import Flask, render_template, request, flash, jsonify, send_file
 import os
 import pandas as pd
 import numpy as np
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.utils import get_column_letter
+import json
+import io
 
 app = Flask(__name__)
 app.secret_key = 'secret-key' 
@@ -12,7 +17,7 @@ default_criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (0.00-4.00)"},
     {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: tidak aktif<br>2: sedikit aktif<br>3: cukup aktif<br>4: aktif<br>5: sangat aktif'},
     {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berkecukupan<br>2: sedikit berkecukupan<br>3: cukup berkecukupan<br>4: bercukupan<br>5: sangat bercukupan"},
-    {'kode': 'C4', 'nama': 'Semester Atas', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (e.g. 8)"},
+    {'kode': 'C4', 'nama': 'Semester', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (e.g. 8)"},
     {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berprestasi<br>2: sedikit berprestasi<br>3: cukup berprestasi<br>4: berprestasi<br>5: sangat berprestasi"},
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: tidak kuat<br>2: kurang kuat<br>3: cukup kuat<br>4: kuat<br>5: sangat kuat"},
 ]
@@ -259,7 +264,7 @@ def phpexample():
 
     if filename.endswith(('.xlsx', '.xls')):
         try:
-            df = pd.read_excel(file)
+            df = pd.read_excel(file, header=None)
         except Exception as e:
             return jsonify({"error": f"Error reading Excel file: {e}"}), 500
     elif filename.endswith('.csv'):
@@ -274,7 +279,7 @@ def phpexample():
 
     for idx1, row in enumerate(data):
         for idx2, val in enumerate(row):
-            if idx2 != 0:
+            if not (idx2 == 0 or idx1 == 0):
                 try:
                     converted_val = float(val)
 
@@ -289,30 +294,73 @@ def phpexample():
                     # - Strings that cannot be converted to float (e.g., "hello", "N/A")
                     # - None values (float(None) raises TypeError)
                     data[idx1][idx2] = 0.0
-
+    print(data)
     return jsonify(data)
 
 
-@app.route('/download_template/<string:template_name>')
-def download_template(template_name):
-    filename = 'template SAW.xlsx'
+@app.route('/download_template', methods=['POST'])
+def download_template():
+
+    criterias = json.loads(request.form.get('criterias')) # <-- Use 'criterias_data' to match JS
+    template_name = request.form.get('template_name')
+
+    wb = Workbook()
+    ws = wb.active
+
+    print(f"Received template_name: {template_name}")
+    print(f"Received criterias_data (raw): {type(criterias)}")
+    # return jsonify({"error": "No template found for this method."}), 400
 
     if template_name == "DEMATEL":
-        filename = 'template DEMATEL.xlsx'
+        return jsonify({"error": "No template found for this method."}), 400
+    elif template_name == "SAW":
+        ws.append(['Nama Alternatif'] + criterias)
 
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
+        # make it bold
+        for cell in ws[1]: # In openpyxl, rows are 1-indexed (ws[1] is the first row)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(wrap_text=True, vertical='center')
 
-    if os.path.exists(filepath):
-        # send_file is used to send static files from the server to the client.
-        # as_attachment=True prompts the browser to download the file instead of displaying it.
-        # download_name allows you to specify the filename the user sees when downloading.
-        return send_file(filepath, as_attachment=True, download_name=filename)
+        # atur lebar
+        ws.column_dimensions['A'].width = 25 
+
+        for i, _ in enumerate(criterias):
+            col_letter = get_column_letter(i + 2) 
+            ws.column_dimensions[col_letter].width = 10
+
+        
+        # grid for usable columns
+        thin_border = Border(left=Side(style='thin'), 
+                            right=Side(style='thin'), 
+                            top=Side(style='thin'), 
+                            bottom=Side(style='thin'))
+        
+        # Determine the last column letter
+        last_col_idx = 1 + len(criterias) 
+        # last_col_letter = get_column_letter(last_col_idx)
+
+        for r_idx in range(1, 100 + 1): # r_idx goes from 1 (header) to total_data_rows
+            for c_idx in range(1, last_col_idx + 1): # c_idx goes from 1 (col A) to last_col_idx
+                cell = ws.cell(row=r_idx, column=c_idx) # Get the specific cell object
+                cell.border = thin_border
+
+        # nama sheets
+        ws.title = "Input Data SAW"
     else:
-        return "File not found!", 404
+        return jsonify({"error": "No template found for this method."}), 400
+    
+    output = io.BytesIO() 
+    wb.save(output)      
+    output.seek(0)
 
+    filename = f'template_{template_name}.xlsx'
+    print(f"Received template_name: {filename}")
 
-    # out = sp.run(["php", "excelreader.php"], stdout=sp.PIPE)
-    # return out.stdout
+    # wb.save("myworkbook.xlsx")
+    return send_file(output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', # Correct MIME type for .xlsx files
+                    as_attachment=True,
+                    download_name=filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

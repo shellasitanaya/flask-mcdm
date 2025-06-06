@@ -820,15 +820,26 @@
 
         if (result.isConfirmed) {
           
-          const response = await fetch('/read-excel', { // Send to your Flask route
+          const response = await fetch('/read-excel', { 
             method: 'POST',
-            body: formData, // FormData handles 'multipart/form-data' correctly
+            body: formData, 
           });
 
-          const resultt = await response.json(); // Parse JSON response
+          let resultt = NaN
+
+          try {
+            resultt = await response.json();
+          } catch (jsonError) {
+            Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Pastikan template terisi dengan baik.",
+            });
+              
+          }
+          
 
           if (response.ok) {
-            // console.log(resultt);
 
             const tbody = document.getElementById('tableBody');
             const criteriaCount = parseInt(document.getElementById('criteria-count').value);
@@ -837,6 +848,39 @@
             // empty out entries
             tbody.innerHTML=``;
             rowCount = 0;
+
+            // check if template suits excel (check if criteria names match)
+            const firstRowInExcel = resultt.shift();
+
+            let criteriaNames = [];
+            for (let i = 0; i < criteriaCount; i++) {
+              const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+              if (nameInput) {
+                criteriaNames.push(nameInput.value);
+              }
+            }
+
+            // console.log(criteriaNames);
+            // console.log(firstRowInExcel);
+
+            let isWrongTemplate = false
+
+            for (let index = 0; index < criteriaNames.length; index++) {
+              if(firstRowInExcel[index+1] === undefined || (firstRowInExcel[index+1] !== criteriaNames[index])) {
+                // berarti template salah
+                isWrongTemplate = true
+              }
+              
+            }
+
+            if(isWrongTemplate) {
+              Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Template tidak sesuai kriteria terpilih!",
+              });
+              return
+            }
 
             resultt.forEach(alternative => {
               const row = document.createElement('tr');
@@ -861,10 +905,6 @@
               rowCount++;
               updateAltCount();
             });
-              
-              
-
-              
 
           } else {
             
@@ -891,7 +931,7 @@
     
     const criteriaCount = criteriaCountInput ? parseInt(criteriaCountInput.value) : 0;
 
-    const criteriaNames = [];
+    let criteriaNames = [];
     for (let i = 0; i < criteriaCount; i++) {
       const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
       if (nameInput) {
@@ -900,7 +940,7 @@
     }
 
     const formData = new FormData();
-    formData.append('criterias', criteriaNames);
+    formData.append('criterias', JSON.stringify(criteriaNames));
     formData.append('template_name', 'SAW');
 
     try {
@@ -920,19 +960,42 @@
           });
 
           try {
-    const resultt = await response.json();
-    console.log(resultt);
-} catch (e) {
-    console.error("Error parsing response as JSON:", e);
-    // You might also want to log the raw response text to see what came back
-    // const text = await response.text();
-    // console.log("Raw response text:", text);
-}
+            
+            
+             if (response.ok) { 
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'template SAW.xlsx'; 
+                // if (contentDisposition && contentDisposition.includes('attachment')) {
+                    
+                //     const filenameMatch = contentDisposition.match(/filename\*?=['"]?(?:UTF-8''|[^;']*)?([^;']+)/);
+                //     if (filenameMatch && filenameMatch[1]) {
+                //         filename = decodeURIComponent(filenameMatch[1]);
+                //     }
+                // }
+
+
+                const blob = await response.blob();
+
+                const url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename; 
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+             }
+          } catch (e) {
+              console.error("Error parsing response as JSON:", e);
+          }
           
 
           
         } 
+        
       });
+
     } catch (error) {
       
     }
