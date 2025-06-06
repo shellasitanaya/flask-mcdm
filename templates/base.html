@@ -1,28 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}MCDM App{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- swal -->
    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body class="bg-white text-gray-900 scroll-smooth">
 
   <!-- NAVBAR -->
-<header class="fixed top-0 w-full bg-white shadow z-50">
+  <header class="fixed top-0 w-full bg-white shadow z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
       <h1 class="text-2xl font-bold text-blue-600">Logo</h1>
       <nav class="space-x-4">
         <a href="#home" class="text-gray-700 hover:text-blue-600">Home</a>
         <a href="#methods" class="text-gray-700 hover:text-blue-600">Methods</a>
+
+
       </nav>
     </div>
   </header>
 
   <!-- MAIN CONTENT -->
-  <main class="pt-24 pb-12 min-h-screen">
+  <main class=" min-h-screen">
     {% block content %}
     {% endblock %}
   </main>
@@ -33,4 +37,5 @@
   </footer>
 
 </body>
+
 </html>
