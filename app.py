@@ -1,19 +1,20 @@
-from flask import Flask, render_template, request, flash, jsonify
+from flask import Flask, render_template, request, flash, jsonify, send_file
 import os
 import pandas as pd
 import numpy as np
 
 app = Flask(__name__)
 app.secret_key = 'secret-key' 
+DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
 # Daftar kriteria dengan bobot dan tipe
 criteria = [
-    {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15},
-    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10},
-    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35},
-    {'kode': 'C4', 'nama': 'Semester Atas', 'tipe': 'Benefit', 'bobot': 0.05},
-    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15},
-    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20},
+    {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (0.00-4.00)"},
+    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: tidak aktif<br>2: sedikit aktif<br>3: cukup aktif<br>4: aktif<br>5: sangat aktif'},
+    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berkecukupan<br>2: sedikit berkecukupan<br>3: cukup berkecukupan<br>4: bercukupan<br>5: sangat bercukupan"},
+    {'kode': 'C4', 'nama': 'Semester Atas', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (e.g. 8)"},
+    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berprestasi<br>2: sedikit berprestasi<br>3: cukup berprestasi<br>4: berprestasi<br>5: sangat berprestasi"},
+    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: tidak kuat<br>2: kurang kuat<br>3: cukup kuat<br>4: kuat<br>5: sangat kuat"},
 ]
 
 # Normalisai matrix berdasarkan tipe kriteria
@@ -150,6 +151,24 @@ def phpexample():
                     data[idx1][idx2] = 0.0
 
     return jsonify(data)
+
+
+@app.route('/download_template/<string:template_name>')
+def download_template(template_name):
+    filename = 'template SAW.xlsx'
+
+    if template_name == "DEMATEL":
+        filename = 'template DEMATEL.xlsx'
+
+    filepath = os.path.join(DOWNLOAD_DIR, filename)
+
+    if os.path.exists(filepath):
+        # send_file is used to send static files from the server to the client.
+        # as_attachment=True prompts the browser to download the file instead of displaying it.
+        # download_name allows you to specify the filename the user sees when downloading.
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    else:
+        return "File not found!", 404
 
 
     # out = sp.run(["php", "excelreader.php"], stdout=sp.PIPE)
