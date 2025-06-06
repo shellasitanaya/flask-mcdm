@@ -792,11 +792,10 @@
 
 
   uploadExcelForm.addEventListener('submit', async function (e) {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault(); 
 
-    const formData = new FormData(this); // 'this' refers to the form element
+    const formData = new FormData(this); 
 
-    // Get the file input itself
     const fileInput = this.querySelector('input[type="file"]');
     if (fileInput.files.length === 0) {
       Swal.fire({
@@ -832,7 +831,7 @@
           } catch (jsonError) {
             Swal.fire({
                 icon: "error",
-                title: "Oops...",
+                title: "Error",
                 text: "Pastikan template terisi dengan baik.",
             });
               
@@ -876,7 +875,7 @@
             if(isWrongTemplate) {
               Swal.fire({
                 icon: "error",
-                title: "Oops...",
+                title: "Error",
                 text: "Template tidak sesuai kriteria terpilih!",
               });
               return
@@ -997,7 +996,11 @@
       });
 
     } catch (error) {
-      
+      Swal.fire({
+          title: "Error",
+          text: "Failed in getting file.",
+          icon: "error"
+      });
     }
 
   });

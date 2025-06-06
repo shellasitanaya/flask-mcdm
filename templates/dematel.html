@@ -6,19 +6,20 @@
     <h2 class="text-3xl font-bold mb-6 text-gray-800">DEMATEL Method</h2>
 
     <!-- CSV -->
-    <div class="mb-8 p-4 bg-white rounded-lg shadow-md"> 
-        <form method="post" enctype="multipart/form-data" class="mb-6">
-        <label class="block font-semibold mb-2 text-gray-700">Upload CSV file:</label>
+    <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
+        <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="flex-col flex">
+        <label class="block font-semibold mb-2">Upload data perhitungan SAW (optional):</label>
         <input type="file" name="csv_file" accept=".csv" class="mb-3 block w-full text-gray-700
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0
                     file:text-sm file:font-semibold
                     file:bg-blue-50 file:text-blue-700
                     hover:file:bg-blue-100 cursor-pointer"> 
-        <button type="submit"
-            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md">
-            Upload and Calculate
-        </button>
+        <div class="flex items-center mt-4">
+            <a id="downloadExcelButton" class="hover:cursor-pointer bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2 ">📄 Unduh Template</a>
+            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold shadow-md">⇪ Upload</button>
+            
+        </div>
         </form>
     </div>
     
@@ -50,6 +51,42 @@
     <div id="results-container" class="results mt-10 mb-8 p-4 bg-white rounded-lg shadow-md "></div>
 </div>
 
+<!-- modal -->
+<div id="instruction-modal" class="w-screen h-screen fixed top-0 left-0 bg-black/50 flex justify-center items-center px-8 hidden">
+  
+
+    <div class="rounded-2xl border-2 border-slate-300 bg-white w-full max-h-[500px] max-w-[600px] mt-[50px] relative flex flex-col justify-center items-center pt-1 pb-6 px-6">
+        <div class="w-full flex"><button onclick="toggleDirectionModal()" class="text-5xl ml-auto text-black hover:text-gray-600">×</button></div>
+
+        <h2 class="mt-1 mb-4 font-bold text-xl sm:text-2xl lg:text-3xl">Instruksi</h2>
+
+        <div class="w-full grow overflow-scroll">
+        <table class=" mt-4 w-full">
+            
+
+            
+            <tr class="bg-purple-100">
+            <th>Kriteria</th>
+            <th>Tipe</th>
+            <th>Deskripsi</th>
+            </tr>
+
+            
+            {% for c in criteria %}
+            <tr>
+            <td>{{ c.nama }}</td>
+            <td>{{ c.tipe }}</td>
+            <td class="text-sm sm:text-base">{{ c.description | safe }}</td>
+            </tr>
+            {% endfor %}
+            
+
+        </table>
+        </div>
+    </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {# SweetAlert2 JS #}
 <script>
     // Inisialisasi variabel untuk menyimpan instance network (Vis.js)
@@ -58,6 +95,7 @@
     // Ambil label kriteria awal dari backend
     const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
     
+
     document.addEventListener('DOMContentLoaded', function() {
         const numCriteriaInput = document.getElementById('num_criteria');
 
@@ -462,5 +500,233 @@
             networkInstance.fit();
         });
     }
+
+
+    // BUAT EXCEL ---------------------------------------------------------------------------
+uploadExcelForm.addEventListener('submit', async function (e) {
+    e.preventDefault(); 
+
+    const formData = new FormData(this); 
+
+    const fileInput = this.querySelector('input[type="file"]');
+    if (fileInput.files.length === 0) {
+      Swal.fire({
+        title: "Error",
+        text: "No file selected.",
+        icon: "error"
+      });
+
+      return;
+    }
+
+
+    try {
+      Swal.fire({
+        title: "Continue?",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        text: "All data in table will be replaced with your excel file data.",
+        icon: "question"
+      }).then(async (result) => {
+
+        if (result.isConfirmed) {
+          
+          const response = await fetch('/read-excel', { 
+            method: 'POST',
+            body: formData, 
+          });
+
+          let resultt = NaN
+
+          try {
+            resultt = await response.json();
+          } catch (jsonError) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Pastikan template terisi dengan baik.",
+            });
+              
+          }
+          
+
+          if (response.ok) {
+
+            const tbody = document.getElementById('tableBody');
+            const criteriaCount = numCriteriaInput.value;
+
+
+            // empty out entries
+            tbody.innerHTML=``;
+            rowCount = 0;
+
+            // check if template suits excel (check if criteria names match)
+            const firstRowInExcel = resultt.shift();
+
+            let criteriaNames = [];
+            for (let i = 0; i < criteriaCount; i++) {
+              const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+              if (nameInput) {
+                criteriaNames.push(nameInput.value);
+              }
+            }
+
+            // console.log(criteriaNames);
+            // console.log(firstRowInExcel);
+
+            let isWrongTemplate = false
+
+            for (let index = 0; index < criteriaNames.length; index++) {
+              if(firstRowInExcel[index+1] === undefined || (firstRowInExcel[index+1] !== criteriaNames[index])) {
+                // berarti template salah
+                isWrongTemplate = true
+              }
+              
+            }
+
+            if(isWrongTemplate) {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Template tidak sesuai kriteria terpilih!",
+              });
+              return
+            }
+
+            resultt.forEach(alternative => {
+              const row = document.createElement('tr');
+
+              let rowHTML = `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <input type="text" name="alt_name_${rowCount}" class="w-full text-center border rounded px-1 py-1" value="${alternative[0]}">
+                </td>`;
+              for (let j = 0; j < criteriaCount; j++) {
+                rowHTML += `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <input type="number" step="any" min="0" name="value_${rowCount}_${j}" class="w-full text-center border rounded px-1 py-1" required value="${alternative[j+1]}">
+                </td>`;
+              }
+              rowHTML += `
+                <td class="border border-gray-300 px-2 py-1 text-center">
+                  <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+                </td>`;
+
+              row.innerHTML = rowHTML;
+              tbody.appendChild(row);
+              rowCount++;
+              updateAltCount();
+            });
+
+          } else {
+            
+            Swal.fire({
+              title: "Error",
+              text: "Failed in reading file.",
+              icon: "error"
+            });
+            
+          }
+        } 
+      });
+    } catch (error) {
+      console.error('Network or parsing error:', error);
+      uploadMessageDiv.innerHTML = `<span class="text-red-600">An unexpected client-side error occurred: ${error.message}</span>`;
+      if (rowCount === 0) addRow(); // Ensure at least one row exists for manual input
+    }
+  });
+
+
+
+  document.getElementById('downloadExcelButton').addEventListener('click', async function(e){
+    e.preventDefault();
+
+    const numCriteriaInput = document.getElementById('num_criteria');
+    const criteriaCount = numCriteriaInput.value ? parseInt(numCriteriaInput.value) : 0;
+
+    // console.log(criteriaCount)
+
+    // let criteriaNames = [];
+    // for (let i = 0; i < criteriaCount; i++) {
+    //   const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+    //   if (nameInput) {
+    //     criteriaNames.push(nameInput.value);
+    //   }
+    // }
+
+    const formData = new FormData();
+    // formData.append('criterias', JSON.stringify(criteriaNames));
+    formData.append('criteria_amount', criteriaCount);
+    formData.append('template_name', 'DEMATEL');
+
+    try {
+      Swal.fire({
+        title: "Continue?",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        text: "Bentuk template akan mengikuti kriteria yang telah anda submit.",
+        icon: "question"
+      }).then(async (result) => {
+
+        if (result.isConfirmed) {
+          
+          const response = await fetch('/download_template', { // Send to your Flask route
+            method: 'POST',
+            body: formData, // FormData handles 'multipart/form-data' correctly
+          });
+
+          try {
+            
+            
+             if (response.ok) { 
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'template DEMATEL.xlsx'; 
+                // if (contentDisposition && contentDisposition.includes('attachment')) {
+                    
+                //     const filenameMatch = contentDisposition.match(/filename\*?=['"]?(?:UTF-8''|[^;']*)?([^;']+)/);
+                //     if (filenameMatch && filenameMatch[1]) {
+                //         filename = decodeURIComponent(filenameMatch[1]);
+                //     }
+                // }
+
+
+                const blob = await response.blob();
+
+                const url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename; 
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+             }
+          } catch (e) {
+              console.error("Error parsing response as JSON:", e);
+          }
+          
+
+          
+        } 
+        
+      });
+
+    } catch (error) {
+        Swal.fire({
+            title: "Error",
+            text: "Failed in getting file.",
+            icon: "error"
+        });
+    }
+
+  });
+
+
+
+  const instructionModal = document.getElementById('instruction-modal');
+  function toggleDirectionModal() {
+    document.body.classList.toggle('no-scroll');
+    instructionModal.classList.toggle('hidden');
+  }
 </script>
 {% endblock %}

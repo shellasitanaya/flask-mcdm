@@ -5,6 +5,9 @@ import numpy as np
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.comments import Comment
+from openpyxl.worksheet.protection import SheetProtection # Correct for SheetProtection
+from openpyxl.styles.protection import Protection         # Correct for cell.protection
 import json
 import io
 
@@ -329,7 +332,7 @@ def dematel():
     else: # GET request
         # Inisialisasi kriteria default saat halaman dimuat
         num_criteria = 6 # Jumlah kriteria default
-        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester Atas", "Berprestasi", "Motivasi"] # Contoh label
+        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] # Contoh label
         # Pastikan jumlah label sesuai dengan jumlah kriteria, atau akan ditambahkan otomatis di JS
         if len(initial_criteria_labels) < num_criteria:
             for i in range(len(initial_criteria_labels), num_criteria):
@@ -388,19 +391,66 @@ def phpexample():
 @app.route('/download_template', methods=['POST'])
 def download_template():
 
-    criterias = json.loads(request.form.get('criterias')) # <-- Use 'criterias_data' to match JS
     template_name = request.form.get('template_name')
 
     wb = Workbook()
     ws = wb.active
 
-    print(f"Received template_name: {template_name}")
-    print(f"Received criterias_data (raw): {type(criterias)}")
-    # return jsonify({"error": "No template found for this method."}), 400
-
     if template_name == "DEMATEL":
-        return jsonify({"error": "No template found for this method."}), 400
+        criteria_amount = int(request.form.get('criteria_amount'))
+        print(f"CRITERIA AMOUNT: {criteria_amount}")
+        last_col_idx = 1 + criteria_amount
+
+        ws.append([''] + [f'C{i}' for i in range(1, criteria_amount+1)])
+
+        for i in range(1, last_col_idx):
+            ws.append([f'C{i}'] + [0]*criteria_amount)
+
+
+        for i in range(1, last_col_idx):
+            # make first row bold
+            cell = ws.cell(row=1, column=i+1) 
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(wrap_text=True, vertical='center')
+            cell.comment = Comment("Ganti nama sesuai dengan kriteria anda.", "Author")
+            # make first column bold
+            cell = ws.cell(row=i+1, column=1, value=f'={get_column_letter(i+1)}1')
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(wrap_text=True, vertical='center')
+            # for uneditable zeros
+            cell = ws.cell(row=i+1, column=i+1) 
+            # cell.protection = Protection(locked=True)
+            cell.font = Font(bold=True, color="FF0000") 
+            cell.comment = Comment("Angka merah tidak perlu diubah", "Author")
+
+        # atur lebar
+        # ws.column_dimensions['A'].width = 25 
+
+        # for i, _ in enumerate(criterias):
+        #     col_letter = get_column_letter(i + 2) 
+        #     ws.column_dimensions[col_letter].width = 10
+
+        
+        # grid for usable columns
+        thin_border = Border(left=Side(style='thin'), 
+                            right=Side(style='thin'), 
+                            top=Side(style='thin'), 
+                            bottom=Side(style='thin'))
+        
+
+        for r_idx in range(1, last_col_idx+1):
+            for c_idx in range(1, last_col_idx+1): 
+                cell = ws.cell(row=r_idx, column=c_idx) 
+                cell.border = thin_border
+
+        # nama sheets
+        ws.title = "Input Data DEMATEL"
+        ws.protection.sheet = True
+
+        
     elif template_name == "SAW":
+        criterias = json.loads(request.form.get('criterias')) 
+
         ws.append(['Nama Alternatif'] + criterias)
 
         # make it bold
@@ -441,7 +491,6 @@ def download_template():
     output.seek(0)
 
     filename = f'template_{template_name}.xlsx'
-    print(f"Received template_name: {filename}")
 
     # wb.save("myworkbook.xlsx")
     return send_file(output,
