@@ -365,6 +365,9 @@ def phpexample():
     else:
         return jsonify({"error": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}), 400
     
+    if(request.form.get('method_type') is not None and request.form.get('method_type')=="DEMATEL"):
+        df.drop(columns=df.columns[0], inplace=True)
+        
     data = df.values.tolist()
 
     for idx1, row in enumerate(data):
