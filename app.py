@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, jsonify, redirect, url_for #, session # <--- HAPUS SESSION IMPORT,
+from flask import Flask, render_template, request, flash, jsonify, redirect, url_for, json #, session # <--- HAPUS SESSION IMPORT,
 import os
 import pandas as pd
 import numpy as np
@@ -280,27 +280,38 @@ def dematel():
             D = np.sum(total_relation_matrix, axis=1)
             R = np.sum(total_relation_matrix, axis=0)
 
-            prominence = D + R
-            causal = D - R
+            prominence = D + R      # Ri
+            causal = D - R          # Ci
 
             # --- Hitung Type of Identity ---
             identity_types = []
             for val in causal:
                 if val > 0.0001:  # Menggunakan sedikit toleransi untuk floating point
-                    identity_types.append('Influencer (Penyebab)')
+                    identity_types.append('Cause')
                 elif val < -0.0001: # Menggunakan sedikit toleransi untuk floating point
-                    identity_types.append('Influenced (Akibat)')
+                    identity_types.append('Effect')
                 else:
                     identity_types.append('Neutral')
+
+            # --- Combine D, R, Prominence, Causal, and Identity Type ---
+            # Create a list of dictionaries for easier rendering on frontend
+            combined_summary_data = []
+            for i in range(num_criteria):
+                combined_summary_data.append({
+                    'label': criteria_labels[i],
+                    'D': D[i].item(),  # Use .item() to get Python scalar from NumPy float
+                    'R': R[i].item(),
+                    'prominence': prominence[i].item(),
+                    'causal': causal[i].item(),
+                    'type': identity_types[i]
+                })
 
             results = {
                 'initial_matrix': initial_matrix.tolist(),
                 'normalized_matrix': normalized_matrix.tolist(),
                 'total_relation_matrix': total_relation_matrix.tolist(),
-                'prominence': prominence.tolist(),
-                'causal': causal.tolist(),
-                'criteria_labels': criteria_labels,
-                'identity_types': identity_types # Tambahkan Type of Identity di sini
+                'criteria_labels': criteria_labels, # Still useful for matrix headers etc.
+                'combined_summary_data': combined_summary_data # New combined data
             }
             return jsonify({'success': True, 'results': results})
 
@@ -310,8 +321,19 @@ def dematel():
             return jsonify({'success': False, 'message': 'Matriks tidak dapat dibalik. Periksa kembali input Anda (mungkin ada dependensi linear atau nilai yang salah).'}), 400
         except Exception as e:
             return jsonify({'success': False, 'message': f'Terjadi kesalahan tak terduga: {str(e)}'}), 500
+        
+    else: # GET request
+        # Inisialisasi kriteria default saat halaman dimuat
+        num_criteria = 6 # Jumlah kriteria default
+        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester Atas", "Berprestasi", "Motivasi"] # Contoh label
+        # Pastikan jumlah label sesuai dengan jumlah kriteria, atau akan ditambahkan otomatis di JS
+        if len(initial_criteria_labels) < num_criteria:
+            for i in range(len(initial_criteria_labels), num_criteria):
+                initial_criteria_labels.append(f'Kriteriaa {i+1}')
 
-    return render_template('dematel.html')
+        return render_template('dematel.html',
+                               num_criteria=num_criteria,
+                               criteria_labels_json=json.dumps(initial_criteria_labels)) # Kirim sebagai string JSON
 
 @app.route('/read-excel', methods=['POST'])
 def phpexample():
