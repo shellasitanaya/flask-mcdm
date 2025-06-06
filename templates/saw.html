@@ -5,8 +5,8 @@
 
 <style>
   .no-scroll {
-      overflow: hidden !important; /* !important to override potential other styles */
-      padding-right: var(--scrollbar-width, 0); /* To prevent content shift if scrollbar disappears */
+      overflow: hidden !important; 
+      padding-right: var(--scrollbar-width, 0);
   }
 
 
@@ -22,21 +22,11 @@
 
 <!-- padding for smaller screen -->
 <section class="max-w-6xl mx-auto p-4 sm:p-6">
-  <div class="flex items-center mb-6">
+  <div class="flex items-center mt-20 mb-6">
     <h2 class="text-3xl font-bold text-gray-800">SAW Method</h2>
-    <button onclick="toggleDirectionModal()" class="ml-2 rounded-full border-2 border-blue-500 text-blue-500 hover:text-white hover:bg-blue-500 transition-colors font-bold !h-[25px] !w-[25px] flex justify-center items-center">?</button>
+    <!-- <button onclick="toggleDirectionModal()" class="ml-2 rounded-full border-2 border-blue-500 text-blue-500 hover:text-white hover:bg-blue-500 transition-colors font-bold !h-[25px] !w-[25px] flex justify-center items-center">?</button> -->
   </div>
 
-  <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
-    <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="mb-6 flex-col flex">
-      <label class="block font-semibold mb-2">Upload XLSX/CSV file (optional):</label>
-      <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="mb-3">
-      <div class="flex items-center">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition w-fit h-fit mr-1">⇪ Upload</button>
-        <a href="{{ url_for('download_template', template_name='SAW') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition font-semibold w-fit h-fit ">📄 Download Template</a>
-      </div>
-    </form>
-  </div>
 
   <!-- MANUAL INPUT -->
   <form method="post" id="criteriaForm" class="w-full mb-10 p-4 bg-white rounded-lg shadow-md"> 
@@ -117,7 +107,20 @@
 
   </form>
 
-  <hr class="my-10 border-t border-gray-300"> 
+  <hr class="mt-16 mb-8 border-t border-gray-300"> 
+
+  <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
+    <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="flex-col flex">
+      <label class="block font-semibold mb-2">Upload data perhitungan SAW (optional):</label>
+      <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="mb-3">
+      <div class="flex items-center mt-4">
+        <a id="downloadExcelButton" class="hover:cursor-pointer bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2 ">📄 Unduh Template</a>
+        <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold shadow-md">⇪ Upload</button>
+        
+      </div>
+    </form>
+  </div>
+
 
   <form method="post" id="sawForm" class="mb-10 p-4 bg-white rounded-lg shadow-md">
     {% if criteria %}
@@ -131,7 +134,11 @@
     <input type="hidden" name="existing_criteria_count" value="0">
     {% endif %}
     <input type="hidden" name="form_type" value="saw">
-    <h2 class="text-xl font-semibold mb-3 text-gray-800">Input Data Alternatif & Hitung SAW</h2>
+    <div class="w-full flex">
+      <h2 class="text-xl font-semibold mb-3 text-gray-800">Input Data Alternatif & Hitung SAW</h2>
+      <button type="button" onclick="toggleDirectionModal()" class="ml-2 rounded-full border-2 border-blue-500 text-blue-500 hover:text-white hover:bg-blue-500 transition-colors font-bold !h-[25px] !w-[25px] flex justify-center items-center">?</button>
+    </div>
+    
 
     {# START: Responsive Table Wrapper for SAW Input #}
     <div class="overflow-x-auto rounded-lg border border-gray-300">
@@ -208,7 +215,7 @@
     {# END: Responsive Table Wrapper for SAW Input #}
 
     <button type="button" id="addRowBtn"
-      class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2">+
+      class="mt-8 bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2">+
       Tambah Alternatif</button>
     <input type="hidden" name="alt_count" id="altCount" value="{{ alternatives|length|default(0) }}"> 
     <button type="submit" id="submitSawBtn"
@@ -363,10 +370,10 @@
 <div id="instruction-modal" class="w-screen h-screen fixed top-0 left-0 bg-black/50 flex justify-center items-center px-8 hidden">
   
 
-  <div class="rounded-2xl border-2 border-slate-300 bg-white w-full max-h-[500px] mt-[50px] relative flex flex-col justify-center items-center pt-1 pb-6 px-6">
-    <div class="w-full flex"><button onclick="toggleDirectionModal()" class="text-5xl ml-auto">×</button></div>
+  <div class="rounded-2xl border-2 border-slate-300 bg-white w-full max-h-[500px] max-w-[600px] mt-[50px] relative flex flex-col justify-center items-center pt-1 pb-6 px-6">
+    <div class="w-full flex"><button onclick="toggleDirectionModal()" class="text-5xl ml-auto text-black hover:text-gray-600">×</button></div>
 
-    <h2 class="mt-1 mb-4 font-bold lg:text-3xl">Instruction</h2>
+    <h2 class="mt-1 mb-4 font-bold text-xl sm:text-2xl lg:text-3xl">Instruksi</h2>
 
     <div class="w-full grow overflow-scroll">
       <table class=" mt-4 w-full">
@@ -374,9 +381,9 @@
 
         
         <tr class="bg-blue-100">
-          <th>Criteria</th>
-          <th>Type</th>
-          <th>Description</th>
+          <th>Kriteria</th>
+          <th>Tipe</th>
+          <th>Deskripsi</th>
         </tr>
 
         
@@ -384,7 +391,7 @@
         <tr>
           <td>{{ c.nama }}</td>
           <td>{{ c.tipe }}</td>
-          <td>{{ c.description | safe }}</td>
+          <td class="text-sm sm:text-base">{{ c.description | safe }}</td>
         </tr>
           {% endfor %}
         
@@ -409,6 +416,10 @@
   // Tambahkan variabel untuk form kriteria dan tombol submit-nya
   const criteriaForm = document.getElementById('criteriaForm');
   const submitCriteriaBtn = document.getElementById('submitCriteriaBtn');
+
+
+  const downloadExcelForm = document.getElementById('downloadExcelForm');
+
 
   // Helper function to get attributes for input number based on criteria name
   function getCriteriaInputAttributes(criteriaName) {
@@ -872,6 +883,63 @@
       if (rowCount === 0) addRow(); // Ensure at least one row exists for manual input
     }
   });
+
+
+
+  document.getElementById('downloadExcelButton').addEventListener('click', async function(e){
+    e.preventDefault();
+    
+    const criteriaCount = criteriaCountInput ? parseInt(criteriaCountInput.value) : 0;
+
+    const criteriaNames = [];
+    for (let i = 0; i < criteriaCount; i++) {
+      const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+      if (nameInput) {
+        criteriaNames.push(nameInput.value);
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('criterias', criteriaNames);
+    formData.append('template_name', 'SAW');
+
+    try {
+      Swal.fire({
+        title: "Continue?",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        text: "Bentuk template akan mengikuti kriteria yang telah anda submit.",
+        icon: "question"
+      }).then(async (result) => {
+
+        if (result.isConfirmed) {
+          
+          const response = await fetch('/download_template', { // Send to your Flask route
+            method: 'POST',
+            body: formData, // FormData handles 'multipart/form-data' correctly
+          });
+
+          try {
+    const resultt = await response.json();
+    console.log(resultt);
+} catch (e) {
+    console.error("Error parsing response as JSON:", e);
+    // You might also want to log the raw response text to see what came back
+    // const text = await response.text();
+    // console.log("Raw response text:", text);
+}
+          
+
+          
+        } 
+      });
+    } catch (error) {
+      
+    }
+
+  });
+
+
 
   const instructionModal = document.getElementById('instruction-modal');
   function toggleDirectionModal() {
