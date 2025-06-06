@@ -17,9 +17,9 @@
 <body class="bg-white text-gray-900 scroll-smooth">
 
   <!-- NAVBAR -->
-  <header class="fixed top-0 w-full bg-white shadow z-50">
-    <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-      <h1 class="text-2xl font-bold text-blue-600">Logo</h1>
+  <header class="fixed top-0 w-full bg-white/30 backdrop-blur-lg shadow z-50">
+    <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-8">
+      <h1 class="text-2xl font-bold text-blue-600">MCDMApp.</h1>
       <nav class="space-x-4">
         <a href="#home" class="text-gray-700 hover:text-blue-600">Home</a>
         <a href="#methods" class="text-gray-700 hover:text-blue-600">Methods</a>
@@ -30,14 +30,39 @@
   </header>
 
   <!-- MAIN CONTENT -->
-  <main class=" min-h-screen">
+  <main class=" min-h-screen pt-24">
     {% block content %}
     {% endblock %}
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-blue-900 text-white text-center py-6 mt-auto">
-    <p class="text-sm">&copy; {{ 2025 }} MCDM App. All rights reserved.</p>
+  <footer id="about" class="bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+      <div>
+        <h3 class="text-xl font-bold mb-4">MCDM App</h3>
+        <p class="text-gray-400 text-sm">
+          Aplikasi web untuk membantu Anda dalam mengambil keputusan multi-kriteria secara efektif dan efisien.
+        </p>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#home" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+          <li><a href="#methods" class="text-gray-400 hover:text-white transition-colors">Methods</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold mb-4">Hubungi Kami</h3>
+         <ul class="space-y-2 text-sm text-gray-400">
+           <li>Email: contact@mcdmapp.com</li>
+           <li>Lokasi: Indonesia</li>
+         </ul>
+      </div>
+    </div>
+    <div class="bg-black/50 text-center py-4">
+      <p class="text-sm text-gray-400">&copy; {{ 2025 }} MCDM App. All rights reserved.</p>
+    </div>
   </footer>
 
 </body>

@@ -33,7 +33,7 @@
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full table-auto border-collapse"> 
         <thead>
-          <tr class="bg-blue-100 text-gray-800">
+          <tr class="bg-purple-100 text-gray-800">
             <th class="border border-gray-300 px-3 py-2 text-left text-sm sm:text-base">Nama Kriteria</th>
             <th class="border border-gray-300 px-3 py-2 text-left text-sm sm:text-base">Bobot</th>
             <th class="border border-gray-300 px-3 py-2 text-left text-sm sm:text-base">Tipe</th>
@@ -47,17 +47,17 @@
           <tr>
             <td class="border border-gray-300 px-2 py-1">
               <input type="text" name="criteria_name_{{i}}"
-                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 value="{{ c.nama }}" required>
             </td>
             <td class="border border-gray-300 px-2 py-1">
               <input type="number" name="criteria_weight_{{i}}" step="0.01" min="0" max="1"
-                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 value="{{ c.bobot }}" required>
             </td>
             <td class="border border-gray-300 px-2 py-1">
               <select name="criteria_type_{{i}}"
-                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 required>
                 <option value="Benefit" {% if c.tipe=='Benefit' %}selected{% endif %}>Benefit</option>
                 <option value="Cost" {% if c.tipe=='Cost' %}selected{% endif %}>Cost</option>
@@ -122,7 +122,7 @@
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full table-auto border-collapse" id="sawTable">
         <thead>
-          <tr class="bg-blue-100">
+          <tr class="bg-purple-100">
             <th class="border border-gray-300 px-3 py-2 text-sm sm:text-base">Alternatif</th>
             {% for c in criteria %}
             <th class="border border-gray-300 px-3 py-2 text-sm sm:text-base">{{ c.nama }}<br><small
@@ -136,14 +136,14 @@
           <tr>
             <td class="border border-gray-300 px-2 py-1 text-center">
               <input type="text" name="alt_name_0"
-                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 placeholder="Nama Mahasiswa" required>
             </td>
             {% for j in range(criteria|length) %}
             {% set p_data = get_placeholder_range(criteria[j].nama) %} 
              <td class="border border-gray-300 px-2 py-1 text-center">
                             <input type="number" name="value_0_{{j}}"
-                                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                                 placeholder="{{ p_data }}" required
                                 {% if criteria[j].nama.lower() == 'ips' %} min="0" max="4" step="0.01"
                                 {% elif criteria[j].nama.lower() == 'semester' %} min="1" max="14" step="1"
@@ -161,14 +161,14 @@
           <tr>
             <td class="border border-gray-300 px-2 py-1 text-center">
               <input type="text" name="alt_name_{{i}}"
-                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 value="{{ alternatives[i] }}" required>
             </td>
             {% for j in range(criteria|length) %}
             {% set attrs = get_placeholder_range(criteria[j].nama) %}
             <td class="border border-gray-300 px-2 py-1 text-center">
               <input type="number" name="value_{{i}}_{{j}}"
-                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500"
+                class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                 value="{{ matrix[i][j] }}" placeholder="{{ attrs.placeholder }}" {{ attrs.min_max_step | safe }}
                 required>
             </td>
@@ -208,7 +208,7 @@
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full table-auto border-collapse">
         <thead>
-          <tr class="bg-blue-200">
+          <tr class="bg-purple-200">
             <th class="border border-gray-300 px-3 py-2 text-sm sm:text-base">Rank</th>
             <th class="border border-gray-300 px-3 py-2 text-sm sm:text-base">Alternatif</th>
             <th class="border border-gray-300 px-3 py-2 text-sm sm:text-base">Score (V<sub>i</sub>)</th>
@@ -239,7 +239,7 @@
     
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full border">
-        <thead class="bg-blue-200 ">
+        <thead class="bg-purple-200 ">
           <tr>
             <th class="border px-2 py-1 text-sm sm:text-base">Alternatif</th>
             {% for c in criteria %}
@@ -265,7 +265,7 @@
 
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full border">
-        <thead class="bg-blue-200 ">
+        <thead class="bg-purple-200 ">
           <tr>
             <th class="border px-2 py-1 text-sm sm:text-base">Alternatif</th>
             {% for c in criteria %}
@@ -292,7 +292,7 @@
     
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full border">
-        <thead class="bg-blue-200 ">
+        <thead class="bg-purple-200 ">
           <tr>
             <th class="border px-2 py-1 text-sm sm:text-base">Alternatif</th>
             {% for c in criteria %}
@@ -320,7 +320,7 @@
     
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full border">
-        <thead class="bg-blue-200 ">
+        <thead class="bg-purple-200 ">
           <tr>
             <th class="border px-2 py-1 text-sm sm:text-base">Alternatif</th>
             <th class="border px-2 py-1 text-sm sm:text-base">Skor Akhir (V<sub>i</sub>)</th>
@@ -418,13 +418,13 @@
     const row = document.createElement('tr');
     let rowHTML = `
                 <td class="border border-gray-300 px-2 py-1 text-center">
-                    <input type="text" name="alt_name_${rowCount}" class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500" placeholder="Nama Mahasiswa" required>
+                    <input type="text" name="alt_name_${rowCount}" class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500" placeholder="Nama Mahasiswa" required>
                 </td>`;
     for (let j = 0; j < criteriaCount; j++) {
       const attrs = getCriteriaInputAttributes(criteriaNames[j] || ''); // Pass criteria name to get attributes
       rowHTML += `
                 <td class="border border-gray-300 px-2 py-1 text-center">
-                    <input type="number" name="value_${rowCount}_${j}" class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500" 
+                    <input type="number" name="value_${rowCount}_${j}" class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500" 
                     placeholder="${attrs.placeholder}" ${attrs.min_max_step} required>
                 </td>`;
     }
@@ -497,13 +497,13 @@
 
     row.innerHTML = `
                 <td class="border border-gray-300 px-2 py-1">
-                    <input type="text" name="criteria_name_${currentCriteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500" placeholder="Nama Kriteria" required>
+                    <input type="text" name="criteria_name_${currentCriteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500" placeholder="Nama Kriteria" required>
                 </td>
                 <td class="border border-gray-300 px-2 py-1">
-                    <input type="number" name="criteria_weight_${currentCriteriaCount}" step="0.01" min="0" max="1" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" required>
+                    <input type="number" name="criteria_weight_${currentCriteriaCount}" step="0.01" min="0" max="1" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500" placeholder="0.00" required>
                 </td>
                 <td class="border border-gray-300 px-2 py-1">
-                    <select name="criteria_type_${currentCriteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500" required>
+                    <select name="criteria_type_${currentCriteriaCount}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500" required>
                         <option value="Benefit">Benefit</option>
                         <option value="Cost">Cost</option>
                     </select>
