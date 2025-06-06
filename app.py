@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, jsonify, send_file
+from flask import Flask, render_template, request, flash, jsonify, redirect, url_for, send_file
 import os
 import pandas as pd
 import numpy as np
@@ -62,23 +62,21 @@ def utility_processor():
     def get_placeholder_range(criteria_name):
         criteria_name_lower = criteria_name.lower()
         if criteria_name_lower == 'ips':
-            return '0-4'
+            return '3.01-4'
         elif criteria_name_lower == 'semester':
-            return '1-14'
+            return '2-14'
         elif criteria_name_lower in ['aktif kemahasiswaan', 'kondisi ekonomi', 'berprestasi', 'motivasi']:
             return '1-5'
         else:
             return 'Nilai'
 
-    # Tambahkan ini untuk mengekspor data placeholder ke JS
     placeholder_data = {
-        'ips': '0-4',
-        'semester': '1-14',
+        'ips': '3.01-4',
+        'semester': '2-14',
         'aktif kemahasiswaan': '1-5',
         'kondisi ekonomi': '1-5',
         'berprestasi': '1-5',
         'motivasi': '1-5',
-        # Anda mungkin ingin menambahkan 'default' juga jika ada kriteria lain
     }
     
     return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
@@ -247,10 +245,99 @@ def saw():
                            ranked=ranked)
 
 
+# dematel
+@app.route('/dematel', methods=['GET', 'POST'])
+def dematel():
+    if request.method == 'POST':
+        try:
+            num_criteria = int(request.json['num_criteria'])
+            criteria_labels = request.json.get('criteria_labels', [])
 
+            # Bersihkan label: gunakan default jika kosong
+            criteria_labels = [label.strip() or f'Kriteria {i+1}' for i, label in enumerate(criteria_labels)]
+            # Pastikan criteria_labels memiliki panjang yang benar (jika ada yang terlewat dari frontend)
+            if len(criteria_labels) < num_criteria:
+                for i in range(len(criteria_labels), num_criteria):
+                    criteria_labels.append(f'Kriteria {i+1}')
 
+            if num_criteria <= 1:
+                return jsonify({'success': False, 'message': 'Jumlah kriteria harus lebih dari 1.'}), 400
 
+            matrix_data = []
+            for i in range(num_criteria):
+                row = []
+                for j in range(num_criteria):
+                    val = float(request.json[f'matrix_{i}_{j}'])
+                    row.append(val)
+                matrix_data.append(row)
 
+            initial_matrix = np.array(matrix_data)
+
+            # --- Langkah-langkah Perhitungan DEMATEL ---
+            max_sum = np.sum(initial_matrix, axis=1).max()
+            normalized_matrix = initial_matrix / max_sum
+
+            identity_matrix = np.identity(num_criteria)
+            inv_part = np.linalg.inv(identity_matrix - normalized_matrix)
+            total_relation_matrix = normalized_matrix @ inv_part
+
+            D = np.sum(total_relation_matrix, axis=1)
+            R = np.sum(total_relation_matrix, axis=0)
+
+            prominence = D + R      # Ri
+            causal = D - R          # Ci
+
+            # --- Hitung Type of Identity ---
+            identity_types = []
+            for val in causal:
+                if val > 0.0001:  # Menggunakan sedikit toleransi untuk floating point
+                    identity_types.append('Cause')
+                elif val < -0.0001: # Menggunakan sedikit toleransi untuk floating point
+                    identity_types.append('Effect')
+                else:
+                    identity_types.append('Neutral')
+
+            # --- Combine D, R, Prominence, Causal, and Identity Type ---
+            # Create a list of dictionaries for easier rendering on frontend
+            combined_summary_data = []
+            for i in range(num_criteria):
+                combined_summary_data.append({
+                    'label': criteria_labels[i],
+                    'D': D[i].item(),  # Use .item() to get Python scalar from NumPy float
+                    'R': R[i].item(),
+                    'prominence': prominence[i].item(),
+                    'causal': causal[i].item(),
+                    'type': identity_types[i]
+                })
+
+            results = {
+                'initial_matrix': initial_matrix.tolist(),
+                'normalized_matrix': normalized_matrix.tolist(),
+                'total_relation_matrix': total_relation_matrix.tolist(),
+                'criteria_labels': criteria_labels, # Still useful for matrix headers etc.
+                'combined_summary_data': combined_summary_data # New combined data
+            }
+            return jsonify({'success': True, 'results': results})
+
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Pastikan semua input adalah angka yang valid.'}), 400
+        except np.linalg.LinAlgError:
+            return jsonify({'success': False, 'message': 'Matriks tidak dapat dibalik. Periksa kembali input Anda (mungkin ada dependensi linear atau nilai yang salah).'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Terjadi kesalahan tak terduga: {str(e)}'}), 500
+        
+    else: # GET request
+        # Inisialisasi kriteria default saat halaman dimuat
+        num_criteria = 6 # Jumlah kriteria default
+        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester Atas", "Berprestasi", "Motivasi"] # Contoh label
+        # Pastikan jumlah label sesuai dengan jumlah kriteria, atau akan ditambahkan otomatis di JS
+        if len(initial_criteria_labels) < num_criteria:
+            for i in range(len(initial_criteria_labels), num_criteria):
+                initial_criteria_labels.append(f'Kriteriaa {i+1}')
+
+        return render_template('dematel.html',
+                               num_criteria=num_criteria,
+                               criteria_labels_json=json.dumps(initial_criteria_labels)) # Kirim sebagai string JSON
 
 @app.route('/read-excel', methods=['POST'])
 def phpexample():

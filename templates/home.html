@@ -1,41 +1,40 @@
 {% extends 'base.html' %}
 
-{% block title %}Home - MCDM App{% endblock %}
+{% block title %}Beranda - Aplikasi MCDM{% endblock %}
 
 {% block content %}
 
-<!-- HERO SECTION -->
-<section id="home" class="h-screen flex flex-col justify-center items-center text-center bg-gradient-to-br from-blue-100 to-white pt-20 px-6">
-  <h2 class="text-4xl md:text-5xl font-bold mb-6">Multi-Criteria Decision Making App</h2>
-  <p class="text-lg md:text-xl max-w-xl mb-8">
-    Analyze your decision matrix easily using SAW and DEMATEL methods. Upload data or input manually.
+<section id="home" class="min-h-screen flex flex-col justify-center items-center text-center bg-gradient-to-br from-blue-200 to-white px-4 py-16 md:px-8 lg:px-12 transition-all duration-1000 ease-in-out">
+  <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 max-w-4xl text-gray-800">Aplikasi Pengambilan Keputusan Multi-Kriteria</h2>
+  <p class="text-lg md:text-xl max-w-xl mb-8 px-4 text-gray-700">
+    Analisis matriks keputusan Anda dengan mudah menggunakan metode SAW dan DEMATEL. Unggah data atau masukkan secara manual.
   </p>
-  <a href="#methods" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition">Get Started</a>
+  <a href="#methods" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md hover:shadow-lg">Mulai Sekarang</a>
 </section>
 
-<!-- METHODS SECTION -->
-<section id="methods" class="h-screen bg-gray-50 pt-20 px-6 flex flex-col justify-center">
-  <div class="max-w-6xl mx-auto text-center mb-10">
-    <h3 class="text-3xl md:text-4xl font-bold mb-4">Choose Your Method</h3>
-    <p class="text-gray-600 max-w-2xl mx-auto">
-      Each method suits different kinds of decision making. Try both and compare the results!
+<section id="methods" class="min-h-screen bg-blue-50 py-16 md:py-20 lg:py-24 px-4 flex flex-col justify-center transition-all duration-1000 ease-in-out">
+  <div class="max-w-6xl mx-auto text-center mb-10 px-4">
+    <h3 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gray-800">Pilih Metode Anda</h3>
+    <p class="text-gray-600 max-w-2xl mx-auto px-4">
+      Setiap metode cocok untuk jenis pengambilan keputusan yang berbeda. Coba keduanya dan bandingkan hasilnya!
     </p>
   </div>
 
-  <div class="cards flex flex-col md:flex-row justify-center gap-8 items-center">
-    <!-- SAW Card -->
-    <div class="bg-white p-6 rounded-xl shadow-md w-full max-w-sm text-center hover:shadow-xl transition">
-      <h4 class="text-2xl font-semibold mb-2">SAW Method</h4>
-      <p class="text-gray-600 mb-4">Simple Additive Weighting: great for clear, weighted comparisons across options.</p>
-      <a href="{{ url_for('saw') }}" class="text-white bg-blue-500 hover:bg-blue-600 px-5 py-2 rounded-full font-semibold">Try SAW</a>
-
+  <div class="cards flex flex-col md:flex-row justify-center gap-8 items-center px-4 lg:px-0">
+    <div class="bg-gradient-to-br from-white to-purple-100 p-8 pb-10 rounded-2xl shadow-lg w-full max-w-sm text-center transform hover:scale-105 hover:shadow-xl transition duration-300 ease-in-out border border-purple-200">
+      <div class="mb-4 text-purple-700 text-5xl">
+        &#9881; </div>
+      <h4 class="text-2xl font-semibold mb-3 text-gray-800">Metode SAW</h4>
+      <p class="text-gray-600 mb-5">Sangat baik untuk perbandingan berbobot yang jelas antar pilihan, memberikan peringkat berdasarkan skor total.</p>
+      <a href="{{ url_for('saw') }}" class="inline-block bg-purple-700 text-white px-7 py-3 rounded-full font-semibold hover:bg-purple-800 transition duration-300 ease-in-out shadow-md hover:shadow-lg">Coba SAW</a>
     </div>
 
-    <!-- DEMATEL Card -->
-    <div class="bg-white p-6 rounded-xl shadow-md w-full max-w-sm text-center hover:shadow-xl transition">
-      <h4 class="text-2xl font-semibold mb-2">DEMATEL Method</h4>
-      <p class="text-gray-600 mb-4">Understand causal relationships and influence among criteria with DEMATEL.</p>
-      <a href="{{ url_for('home') }}#dematel" class="text-white bg-blue-500 hover:bg-blue-600 px-5 py-2 rounded-full font-semibold">Try DEMATEL</a>
+    <div class="bg-gradient-to-br from-white to-yellow-50 p-8 pb-10 rounded-2xl shadow-lg w-full max-w-sm text-center transform hover:scale-105 hover:shadow-xl transition duration-300 ease-in-out border border-yellow-100">
+      <div class="mb-4 text-yellow-600 text-5xl">
+        &#8646; </div>
+      <h4 class="text-2xl font-semibold mb-3 text-gray-800">Metode DEMATEL</h4>
+      <p class="text-gray-600 mb-5">Pahami hubungan sebab-akibat dan pengaruh antar kriteria dengan DEMATEL, cocok untuk analisis struktur kompleks.</p>
+      <a href="{{ url_for('dematel') }}" class="inline-block bg-yellow-600 text-white px-7 py-3 rounded-full font-semibold hover:bg-yellow-700 transition duration-300 ease-in-out shadow-md hover:shadow-lg">Coba DEMATEL</a>
     </div>
   </div>
 </section>

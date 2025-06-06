@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% block title %}DEMATEL Method - MCDM App{% endblock %}
+
+{% block content %} 
+<div class="container max-w-6xl mx-auto p-4 sm:p-6 rounded-lg my-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">DEMATEL Method</h2>
+
+    <!-- CSV -->
+    <div class="mb-8 p-4 bg-white rounded-lg shadow-md"> 
+        <form method="post" enctype="multipart/form-data" class="mb-6">
+        <label class="block font-semibold mb-2 text-gray-700">Upload CSV file:</label>
+        <input type="file" name="csv_file" accept=".csv" class="mb-3 block w-full text-gray-700
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100 cursor-pointer"> 
+        <button type="submit"
+            class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md">
+            Upload and Calculate
+        </button>
+        </form>
+    </div>
+    
+    <div class="mb-8 p-4 bg-white rounded-lg shadow-md"> 
+        <form id="dematelForm" class="">
+            <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
+                <label for="num_criteria" class="text-lg font-medium text-gray-700">Jumlah Kriteria:</label>
+                <input type="number" id="num_criteria" name="num_criteria" min="2" value="{{ num_criteria if num_criteria else 3 }}" required
+                    class="w-24 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center">
+                <button type="button" onclick="generateMatrixInputs()"
+                        class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Buat Matriks
+                </button>
+            </div>
+
+            <div id="criteria-names-container" class="mb-4"></div>
+
+            <div id="matrix-container" class="matrix-container overflow-x-auto mb-6"></div>
+
+            <div class="text-center">
+                <button type="submit" class="submit-btn bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold mt-4 shadow-md" style="display: none;">
+                    Hitung DEMATEL
+                </button>
+            </div>
+        </form>
+    </div>
+    <hr class="my-10 border-t border-gray-300">
+
+    <div id="results-container" class="results mt-10 mb-8 p-4 bg-white rounded-lg shadow-md "></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {# SweetAlert2 JS #}
+<script>
+    // Inisialisasi variabel untuk menyimpan instance network (Vis.js)
+    let networkInstance = null;
+
+    // Ambil label kriteria awal dari backend
+    const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const numCriteriaInput = document.getElementById('num_criteria');
+
+        // inisialisasi matriks input awal
+        if (numCriteriaInput.value && initialCriteriaLabels) {
+            generateMatrixInputs(initialCriteriaLabels);
+        }
+
+        // submission handler untuk form DEMATEL
+        document.getElementById('dematelForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const result = await Swal.fire({
+                title: 'Konfirmasi Perhitungan',
+                text: "Apakah Anda yakin ingin melakukan perhitungan DEMATEL dengan data ini?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Hitung!',
+                cancelButtonText: 'Batal'
+            });
+
+            // If the user confirms (clicks "Ya, Hitung!")
+            if (result.isConfirmed) {
+
+                const numCriteria = parseInt(document.getElementById('num_criteria').value);
+                const formData = {
+                    num_criteria: numCriteria,
+                    criteria_labels: [] // Inisialisasi array untuk label kriteria
+                };
+
+                // Kumpulkan nama kriteria
+                for (let i = 0; i < numCriteria; i++) {
+                    const nameInput = document.getElementById(`criterion_name_${i}`);
+                    formData.criteria_labels.push(nameInput ? nameInput.value.trim() : `Kriteria ${i + 1}`); // Default (e.g K1, K2) jika kosong
+                }
+
+                // Kumpulkan data matriks
+                for (let i = 0; i < numCriteria; i++) {
+                    for (let j = 0; j < numCriteria; j++) {
+                        const inputElement = document.querySelector(`[name="matrix_${i}_${j}"]`);
+                        if (inputElement) { // Pastikan elemen ada
+                            formData[`matrix_${i}_${j}`] = parseFloat(inputElement.value);
+                        }
+                    }
+                }
+
+                try {
+                    // Kirim data ke Flask melalui Fetch API
+                    const response = await fetch('/dematel', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        displayResults(data.results);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Perhitungan Berhasil!',
+                            text: 'Hasil DEMATEL telah ditampilkan.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        // Tampilkan error menggunakan SweetAlert
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Terjadi Kesalahan!',
+                            text: data.message,
+                            confirmButtonText: 'OK'
+                        });
+                        // Hapus hasil sebelumnya saat terjadi error
+                        document.getElementById('results-container').innerHTML = '';
+                        // Hancurkan chart jika ada error
+                        if (networkInstance) {
+                            networkInstance.destroy();
+                            networkInstance = null;
+                        }
+                    }
+                } catch (error) {
+                    // Tangani kesalahan jaringan atau respons tak terduga
+                    console.error('Fetch error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Kesalahan Jaringan',
+                        text: 'Tidak dapat terhubung ke server. Coba lagi.',
+                        confirmButtonText: 'OK'
+                    });
+                    document.getElementById('results-container').innerHTML = '';
+                    // Hancurkan chart jika ada error
+                    if (networkInstance) {
+                        networkInstance.destroy();
+                        networkInstance = null;
+                    }
+                }
+            }
+        });
+    });
+
+    function generateMatrixInputs(predefinedLabels = []) {
+        const numCriteria = parseInt(document.getElementById('num_criteria').value);
+        const criteriaNamesContainer = document.getElementById('criteria-names-container');
+        const matrixContainer = document.getElementById('matrix-container');
+        const submitBtn = document.querySelector('.submit-btn');
+
+        criteriaNamesContainer.innerHTML = ''; // Bersihkan nama kriteria sebelumnya
+        matrixContainer.innerHTML = ''; // Bersihkan kontainer matriks sebelumnya
+        document.getElementById('results-container').innerHTML = ''; // Clear results when inputs regenerated
+
+        // Destroy existing network instance if inputs are regenerated
+        if (networkInstance) {
+            networkInstance.destroy();
+            networkInstance = null;
+        }
+
+        if (numCriteria < 2) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Input Tidak Valid',
+                text: 'Jumlah kriteria harus minimal 2.',
+                confirmButtonText: 'OK'
+            });
+            submitBtn.style.display = 'none';
+            return;
+        }
+
+        // --- Buat input nama kriteria ---
+        let namesHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2 mt-4 text-center">Nama Kriteria:</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">';
+        for (let i = 0; i < numCriteria; i++) {
+            // Gunakan label dari predefinedLabels jika ada, jika tidak, gunakan default "Kriteria X"
+            const currentLabel = predefinedLabels[i] !== undefined && predefinedLabels[i] !== null ? predefinedLabels[i] : '';
+            namesHtml += `
+                <div class="flex items-center space-x-2">
+                    <label for="criterion_name_${i}" class="text-sm font-medium text-gray-600">K${i + 1}:</label>
+                    <input type="text" id="criterion_name_${i}" name="criterion_name_${i}" placeholder="Kriteria ${i + 1}" value="${currentLabel}"
+                           class="flex-1 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm">
+                </div>`;
+        }
+        namesHtml += '</div>';
+        criteriaNamesContainer.innerHTML = namesHtml;
+
+
+        // --- Buat matriks input ---
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'overflow-x-auto mb-6 rounded-lg shadow-sm border border-gray-300';
+        const table = document.createElement('table');
+        table.className = 'min-w-full bg-white';
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+
+        // Header row
+        let headerRow = '<tr><th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold"></th>';
+        for (let i = 0; i < numCriteria; i++) {
+            headerRow += `<th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">K${i + 1}</th>`;
+        }
+        headerRow += '</tr>';
+        thead.innerHTML = headerRow;
+        table.appendChild(thead);
+
+        // Matrix input rows
+        for (let i = 0; i < numCriteria; i++) {
+            let rowHtml = `<tr><th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">K${i + 1}</th>`;
+            for (let j = 0; j < numCriteria; j++) {
+                const isDisabled = (i === j) ? 'disabled' : '';
+                const value = (i === j) ? '0' : '';
+                rowHtml += `<td class="text-center border border-gray-300"><input type="number" step="1" min="0" name="matrix_${i}_${j}" value="${value}" ${isDisabled} required
+                            class="w-3/4 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-sm
+                            ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}"></td>`;
+            }
+            rowHtml += '</tr>';
+            tbody.innerHTML += rowHtml;
+        }
+        table.appendChild(tbody);
+        tableWrapper.appendChild(table); 
+        matrixContainer.appendChild(tableWrapper);
+        // matrixContainer.appendChild(table);
+        submitBtn.style.display = 'block';
+    }
+
+    // Function to dynamically display results
+    function displayResults(results) {
+        const resultsContainer = document.getElementById('results-container');
+        resultsContainer.innerHTML = ''; // Clear previous results
+
+        const criteriaLabels = results.criteria_labels; // Dapatkan label kriteria dari hasil
+        const identityTypes = results.identity_types; // Dapatkan tipe identitas dari hasil
+
+        // Hitung ambang batas (threshold) dari matriks hubungan total
+        let totalSum = 0;
+        let elementCount = 0;
+        results.total_relation_matrix.forEach(row => {
+            row.forEach(val => {
+                totalSum += val;
+                elementCount++;
+            });
+        });
+        const threshold = elementCount > 0 ? totalSum / elementCount : 0;
+        
+        const renderTable = (title, data, isFinalTable = false, threshold = null) => {
+            let tableHtml = `
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">${title}</h3>
+                <div class="overflow-x-auto mb-8 rounded-lg">
+                    <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-sm">
+                        <thead>
+                            <tr>
+                                <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold"></th>
+                                ${criteriaLabels.map(label => `<th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">${label}</th>`).join('')}
+                            </tr>
+                        </thead>
+                            <tbody>
+                        ${data.map((row, i) => `
+                            <tr class="hover:bg-gray-50">
+                                <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">${criteriaLabels[i]}</th>
+                                ${row.map(val => {
+                                    const highlightClass = (threshold !== null && val >= threshold) ? 'bg-yellow-200 font-bold' : '';
+                                    return `<td class="py-2 px-4 border border-gray-200 text-gray-700 text-center ${highlightClass}">${val.toFixed(4)}</td>`;
+                                }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    </table>
+                </div>
+                ${threshold !== null ? `
+                    <p class="text-lg text-gray-700 mt-4 mb-2 text-center">
+                        Nilai Threshold (α): <span class="font-bold text-blue-600">${threshold.toFixed(4)}</span>
+                    </p>
+                    <p class="text-md text-gray-600 mb-4 text-center">
+                        Sel berwarna kuning menunjukkan hubungan pengaruh yang signifikan (nilai sel ≥ Nilai Threshold (α) = ${threshold.toFixed(4)}).
+                    </p>
+                ` : ''}
+            `;
+
+            if (isFinalTable) {
+                // Access the new combined_summary_data directly
+                const summaryData = results.combined_summary_data;
+
+                tableHtml = `
+                    <h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4">${title}</h3>
+                    <div class="overflow-x-auto mb-8">
+                        <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-sm">
+                            <thead>
+                                <tr>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">Kriteria</th>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">D (Driving) / Ri</th>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">R (Receiving) / Ci</th>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">Prominence (Ri+Ci)</th>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">Causal (Ri-Ci)</th>
+                                    <th class="py-2 px-4 border border-gray-300 bg-amber-200 text-gray-600 font-semibold">Type of Identity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${summaryData.map(item => `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.label}</td>
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.D.toFixed(4)}</td>
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.R.toFixed(4)}</td>
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.prominence.toFixed(4)}</td>
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.causal.toFixed(4)}</td>
+                                        <td class="py-2 px-4 border border-gray-200 text-gray-700 text-center">${item.type}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }   
+            resultsContainer.insertAdjacentHTML('beforeend', tableHtml);
+        };
+        resultsContainer.insertAdjacentHTML('beforeend', `
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Langkah-langkah Perhitungan DEMATEL</h3>`);
+
+        renderTable('1. Matriks Awal (Direct Relation Matrix)', results.initial_matrix);
+        renderTable('2. Matriks Normalisasi', results.normalized_matrix);
+        renderTable('3. Matriks Hubungan Total (Total Relation Matrix)', results.total_relation_matrix);
+        renderTable('4. Prominence (Ri+Ci) dan Causal (Ri-Ci)', [], true);
+        renderTable('Matriks Hubungan Total (Total Relation Matrix)', results.total_relation_matrix, false, threshold);
+
+
+        // --- Bagian Diagram Kausal (Vis.js Network) ---
+        resultsContainer.insertAdjacentHTML('beforeend', `
+            <h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4 text-center">Diagram Kausal (Hubungan Total)</h3>
+            <div class="flex relative mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="max-width: 800px; height: 500px; margin: 0 auto;">
+                <div id="networkDemateL" style="width: 100%; height: 100%;"></div>
+            </div>
+        `);
+
+        // Hancurkan instance network yang ada sebelumnya untuk menghindari duplikasi
+        if (networkInstance) {
+            networkInstance.destroy();
+            networkInstance = null;
+        }
+
+        // Siapkan data nodes untuk Vis.js
+        const nodes = new vis.DataSet(criteriaLabels.map((label, i) => ({
+            id: i,
+            label: label,
+            shape: 'box', // Bentuk node kotak seperti di gambar
+            color: {
+                background: '#a8ed7f', // Warna hijau cerah
+                border: '#4CAF50', // Border hijau tua
+                highlight: { background: '#d6ffb0', border: '#7cb342' }
+            },
+            font: { color: '#333333' }
+        })));
+
+        console.log('Threshold for total relation matrix:', threshold.toFixed(4)); // Untuk debug
+
+        // Siapkan data edges untuk Vis.js
+        const edges = new vis.DataSet();
+        results.total_relation_matrix.forEach((row, i) => {
+            row.forEach((val, j) => {
+                // Hanya tambahkan edge jika val > threshold dan bukan self-loop
+                if (i !== j && val > threshold) {
+                    edges.add({
+                        from: i,
+                        to: j,
+                        arrows: 'to', // Panah ke arah tujuan
+                        label: val.toFixed(2), // Tampilkan bobot hubungan (opsional)
+                        font: { align: 'middle' },
+                        color: { color: '#0000FF', highlight: '#0000AA' }, // Warna panah biru
+                        width: Math.max(1, Math.min(5, val * 2)), // Tebal panah berdasarkan kekuatan hubungan
+                        physics: true
+                    });
+                }
+            });
+        });
+
+        const container = document.getElementById('networkDemateL');
+        const data = { nodes: nodes, edges: edges };
+        const options = {
+            layout: {
+                // Gunakan algoritma fisika untuk tata letak otomatis
+                // Bisa juga 'hierarchical' jika ingin tata letak hirarkis
+                // atau 'random' untuk tata letak acak
+                // Untuk diagram kausal, 'force-directed' (default) seringkali cocok
+                improvedLayout: true,
+                randomSeed: undefined, // Gunakan seed untuk tata letak yang konsisten antar reload
+            },
+            physics: {
+                enabled: true,
+                barnesHut: {
+                    gravitationalConstant: -2000,
+                    centralGravity: 0.3,
+                    springLength: 95,
+                    springConstant: 0.04,
+                    damping: 0.09,
+                    avoidOverlap: 0.5
+                },
+                maxVelocity: 50,
+                minVelocity: 0.75,
+                solver: 'barnesHut',
+                stabilization: {
+                    enabled: true,
+                    iterations: 2000, // Banyak iterasi untuk stabilisasi
+                    updateInterval: 100,
+                    //fit: true, // Auto-fit to view
+                    //onlyDynamicEdges: false,
+                    //stabilizationIterations: 2000
+                },
+                adaptiveTimestep: true
+            },
+            nodes: {
+                font: { size: 14, color: '#333333', face: 'Arial' },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                arrows: {
+                    to: { enabled: true, scaleFactor: 1 }
+                },
+                color: { inherit: 'from' },
+                smooth: {
+                    enabled: true,
+                    type: 'continuous' // atau 'cubicBezier'
+                },
+                shadow: true
+            },
+            interaction: {
+                navigationButtons: true, // Tampilkan tombol zoom/pan
+                keyboard: true,
+                zoomView: true,
+                dragNodes: true, // Izinkan user menyeret node
+                dragView: true
+            },
+            manipulation: {
+                enabled: false // Matikan mode manipulasi (edit/add node/edge)
+            }
+        };
+
+        // Buat instance network
+        networkInstance = new vis.Network(container, data, options);
+
+        // Setelah stabilisasi, pastikan diagram pas di layar dan MATIKAN FISIKA
+        networkInstance.once('stabilizationIterationsDone', function() {
+            networkInstance.setOptions( { physics: false } ); // <-- ADD THIS LINE
+            networkInstance.fit();
+        });
+    }
+</script>
+{% endblock %}
