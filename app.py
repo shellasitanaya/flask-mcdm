@@ -332,15 +332,24 @@ def dematel():
     else: # GET request
         # Inisialisasi kriteria default saat halaman dimuat
         num_criteria = 6 # Jumlah kriteria default
-        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] # Contoh label
+        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] 
+        initial_matrix_values = [
+            [0, 1, 1, 4, 4, 1], 
+            [2, 0, 1, 1, 1, 1], 
+            [4, 4, 0, 4, 4, 4],
+            [1, 4, 4, 0, 1, 4],
+            [2, 3, 2, 3, 0, 1],
+            [1, 1, 1, 1, 1, 0]
+        ]
         # Pastikan jumlah label sesuai dengan jumlah kriteria, atau akan ditambahkan otomatis di JS
         if len(initial_criteria_labels) < num_criteria:
             for i in range(len(initial_criteria_labels), num_criteria):
                 initial_criteria_labels.append(f'Kriteriaa {i+1}')
 
         return render_template('dematel.html',
-                               num_criteria=num_criteria,
-                               criteria_labels_json=json.dumps(initial_criteria_labels)) # Kirim sebagai string JSON
+                            num_criteria=num_criteria,
+                            criteria_labels_json=json.dumps(initial_criteria_labels), 
+                            initial_matrix_values=json.dumps(initial_matrix_values))
 
 @app.route('/read-excel', methods=['POST'])
 def phpexample():

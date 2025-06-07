@@ -94,7 +94,7 @@
 
     // Ambil label kriteria awal dari backend
     const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
-    
+    const initialMatrixValues = JSON.parse('{{ initial_matrix_values | safe }}'); // Ambil data matriks input awal
 
     document.addEventListener('DOMContentLoaded', function() {
         const numCriteriaInput = document.getElementById('num_criteria');
@@ -267,7 +267,7 @@
             for (let j = 0; j < numCriteria; j++) {
                 const isDisabled = (i === j) ? 'disabled' : '';
                 const value = (i === j) ? '0' : '';
-                rowHtml += `<td class="text-center border border-gray-300"><input type="number" step="1" min="0" name="matrix_${i}_${j}" value="${value}" ${isDisabled} required
+                rowHtml += `<td class="text-center border border-gray-300"><input type="number" step="1" min="0" name="matrix_${i}_${j}" value="${initialMatrixValues[i][j]}" ${isDisabled} required
                             class="w-3/4 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-sm
                             ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}"></td>`;
             }
