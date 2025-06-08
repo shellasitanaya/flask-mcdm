@@ -38,18 +38,18 @@ def normalize(matrix, types):
         # Untuk kriteria 'Benefit' (semakin besar semakin baik)
         if tipe == 'Benefit':
             max_val = max(col)
-            # Handle case where all values are zero for a benefit criterion
+            # Handle case ketikasemua  value nya 0
             norm_col = [x / max_val if max_val != 0 else 0 for x in col]
         # Untuk kriteria 'Cost' (semakin kecil semakin baik)    
         else:  
             min_val = min(col)
-            # Handle case where min_val is 0 and x is 0
+            # Handle case ketika min_val nya 0 and x = 0
             norm_col = [min_val / x if x != 0 else 0 for x in col]
         normalized.append(norm_col)
 
     return list(map(list, zip(*normalized)))
 
-# Fungsi untuk mengalikan matriks normalisasi dengan bobot kriteria
+# Fungsi akhir untuk menghitung menggunakan saw
 def calculate_saw(matrix, weights, types): 
     # STEP 1 >> Normalisasi Matriks Keputusan
     # Memanggil fungsi normalize() untuk mendapatkan matriks yang sudah dinormalisasi. 
