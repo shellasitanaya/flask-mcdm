@@ -134,9 +134,10 @@
     {% if criteria %}
     <input type="hidden" name="existing_criteria_count" value="{{ criteria|length }}">
     {% for criterion in criteria %}
-    <input type="hidden" name="existing_criteria_name_{{ loop.index0 }}" value="{{ criterion.nama }}">
-    <input type="hidden" name="existing_criteria_weight_{{ loop.index0 }}" value="{{ criterion.bobot }}">
-    <input type="hidden" name="existing_criteria_type_{{ loop.index0 }}" value="{{ criterion.tipe }}">
+      <input type="hidden" name="existing_criteria_name_{{ loop.index0 }}" value="{{ criterion.nama }}">
+      <input type="hidden" name="existing_criteria_weight_{{ loop.index0 }}" value="{{ criterion.bobot }}">
+      <input type="hidden" name="existing_criteria_type_{{ loop.index0 }}" value="{{ criterion.tipe }}">
+      <input type="hidden" name="existing_criteria_description_{{ loop.index0 }}" value="{{ criterion.description }}">
     {% endfor %}
     {% else %}
     <input type="hidden" name="existing_criteria_count" value="0">

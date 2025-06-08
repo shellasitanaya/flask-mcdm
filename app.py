@@ -18,11 +18,11 @@ DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 # Daftar kriteria dengan bobot dan tipe
 default_criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (3.01-4.00)"},
-    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: tidak aktif<br>2: sedikit aktif<br>3: cukup aktif<br>4: aktif<br>5: sangat aktif'},
-    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berkecukupan<br>2: sedikit berkecukupan<br>3: cukup berkecukupan<br>4: bercukupan<br>5: sangat bercukupan"},
+    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: Tidak aktif<br>2: Sedikit aktif<br>3: Cukup aktif<br>4: Aktif<br>5: Sangat aktif'},
+    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak berkecukupan<br>2: Sedikit berkecukupan<br>3: Cukup berkecukupan<br>4: Bercukupan<br>5: Sangat bercukupan"},
     {'kode': 'C4', 'nama': 'Semester', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (2-14)"},
-    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berprestasi<br>2: sedikit berprestasi<br>3: cukup berprestasi<br>4: berprestasi<br>5: sangat berprestasi"},
-    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: tidak kuat<br>2: kurang kuat<br>3: cukup kuat<br>4: kuat<br>5: sangat kuat"},
+    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak berprestasi<br>2: Sedikit berprestasi<br>3: Cukup berprestasi<br>4:Berprestasi<br>5: Sangat berprestasi"},
+    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak kuat<br>2: Kurang kuat<br>3: Cukup kuat<br>4: Kuat<br>5: Sangat kuat"},
 ]
 
 # Normalisai matrix berdasarkan tipe kriteria
@@ -110,9 +110,7 @@ def saw():
 
             if not criteria_count_str:
                 flash("Jumlah kriteria tidak terkirim.", "error")
-                # Jika ada error di sini, tetap tampilkan form dengan kriteria yang sedang diinput
-                # agar user bisa koreksi. Tidak perlu 'return render_template' di setiap error
-                # karena akan di-handle di akhir fungsi.
+                
             
             try:
                 criteria_count = int(criteria_count_str)
@@ -125,6 +123,8 @@ def saw():
                 name = request.form.get(f'criteria_name_{i}', '').strip()
                 bobot_str = request.form.get(f'criteria_weight_{i}', '0')
                 tipe = request.form.get(f'criteria_type_{i}', 'Benefit').strip()
+                description = request.form.get(f'criteria_description_{i}', '').strip() 
+
 
                 if not name:
                     errors.append(f"Nama kriteria ke-{i+1} harus diisi.")
@@ -142,7 +142,7 @@ def saw():
                     bobot = 0
                     errors.append(f"Bobot untuk '{name}' tidak valid.")
 
-                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe})
+                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe, 'description': description})
 
             if submitted_criteria and abs(total_bobot - 1.0) > 0.001:
                 errors.append(f"Total bobot kriteria ({total_bobot:.2f}) harus sama dengan 1.")
