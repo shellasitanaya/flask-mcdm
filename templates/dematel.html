@@ -2,10 +2,30 @@
 {% block title %}DEMATEL Method - MCDM App{% endblock %}
 
 {% block content %} 
+
+
+<style>
+  .no-scroll {
+      overflow: hidden !important; 
+      padding-right: var(--scrollbar-width, 0);
+  }
+
+
+  th {
+    text-align: start;
+  }
+
+  th, td {
+    border: 2px solid gray;
+    padding: 5px 15px 5px 5px;
+  }
+</style>
+
+
+
 <div class="container max-w-6xl mx-auto p-4 sm:p-6 rounded-lg my-8">
     <h2 class="text-3xl font-bold mb-6 text-gray-800">DEMATEL Method</h2>
 
-    <!-- CSV -->
     <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
         <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="flex-col flex">
         <label class="block font-semibold mb-2">Upload data perhitungan DEMATEL (optional):</label>
@@ -39,8 +59,9 @@
 
             <div id="matrix-container" class="matrix-container overflow-x-auto mb-6"></div>
 
-            <div class="text-center">
-                <button type="submit" class="submit-btn bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold mt-4 shadow-md" style="display: none;">
+            <div class="text-center flex items-center mt-4">
+                <button type="button" onclick="toggleDirectionModal()" class="mr-2 rounded-full border-2 border-blue-500 text-blue-500 hover:text-white hover:bg-blue-500 transition-colors font-bold !h-[25px] !w-[25px] flex justify-center items-center">?</button>
+                <button type="submit" class="submit-btn bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold shadow-md" style="display: none;">
                     Hitung DEMATEL
                 </button>
             </div>
@@ -51,40 +72,82 @@
     <div id="results-container" class="results mt-10 mb-8 p-4 bg-white rounded-lg shadow-md "></div>
 </div>
 
+
 <!-- modal -->
-<!-- <div id="instruction-modal" class="w-screen h-screen fixed top-0 left-0 bg-black/50 flex justify-center items-center px-8 hidden">
+<div id="instruction-modal" class="w-screen h-screen fixed top-0 left-0 bg-black/50 flex justify-center items-center px-8 hidden">
   
 
-    <div class="rounded-2xl border-2 border-slate-300 bg-white w-full max-h-[500px] max-w-[600px] mt-[50px] relative flex flex-col justify-center items-center pt-1 pb-6 px-6">
-        <div class="w-full flex"><button onclick="toggleDirectionModal()" class="text-5xl ml-auto text-black hover:text-gray-600">×</button></div>
+  <div class="rounded-2xl border-2 border-slate-300 bg-white w-full max-h-[500px] max-w-[600px] mt-[50px] relative flex flex-col justify-center items-center pt-1 pb-6 px-6">
+    <div class="w-full flex"><button onclick="toggleDirectionModal()" class="text-5xl ml-auto text-black hover:text-gray-600">×</button></div>
 
-        <h2 class="mt-1 mb-4 font-bold text-xl sm:text-2xl lg:text-3xl">Instruksi</h2>
+    <h2 class="mt-1 mb-4 font-bold text-xl sm:text-2xl lg:text-3xl">Instruksi</h2>
 
-        <div class="w-full grow overflow-scroll">
-        <table class=" mt-4 w-full">
-            
+    <div class="w-full grow overflow-scroll">
+      <table class=" mt-4 w-full">
+        
 
-            
-            <tr class="bg-purple-100">
-            <th>Kriteria</th>
-            <th>Tipe</th>
-            <th>Deskripsi</th>
-            </tr>
+        
+        <tr class="bg-amber-200">
+            <th></th>
+            <th>C1</th>
+            <th>C2</th>
+            <th>C3</th>
+            <th>C4</th>
+        </tr>
 
-            
-            {% for c in criteria %}
-            <tr>
-            <td>{{ c.nama }}</td>
-            <td>{{ c.tipe }}</td>
-            <td class="text-sm sm:text-base">{{ c.description | safe }}</td>
-            </tr>
-            {% endfor %}
-            
+        
+        <tr>
+          <td class="bg-amber-200 font-bold">C1</td>
+          <td class="font-bold text-red-500">0</td>
+          <td>4</td>
+          <td>2</td>
+          <td>1</td>
+        </tr>
 
-        </table>
-        </div>
+        <tr>
+          <td class="bg-amber-200 font-bold">C2</td>
+          <td>2</td>
+          <td class="font-bold text-red-500">0</td>
+          <td>3</td>
+          <td>2</td>
+        </tr>
+
+        <tr>
+          <td class="bg-amber-200 font-bold">C3</td>
+          <td>2</td>
+          <td>4</td>
+          <td class="font-bold text-red-500">0</td>
+          <td>2</td>
+        </tr>
+
+        <tr>
+          <td class="bg-amber-200 font-bold">C4</td>
+          <td>2</td>
+          <td>2</td>
+          <td>2</td>
+          <td class="font-bold text-red-500">0</td>
+        </tr>
+          
+        
+
+      </table>
+      <p class="text-xs sm:text-sm mt-2">* cara baca: C2 memiliki pengaruh sedang terhadap C1</p>
+      <p class="font-bold mt-4">Isi dengan angka 0-4, di mana:</p>
+      <ul>
+        <li>0 - Tidak berpengaruh</li>
+        <li>1 - Pengaruh rendah</li>
+        <li>2 - Pengaruh sedang</li>
+        <li>3 - Pengaruh tinggi</li>
+        <li>4 - Pengaruh sangat tinggi</li>
+      </ul>
+      <p class="text-red-500">Angka 0 diagonal tidak bisa diubah.</p>
     </div>
-</div> -->
+
+  </div>
+</div>
+
+
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {# SweetAlert2 JS #}
@@ -95,6 +158,9 @@
     // Ambil label kriteria awal dari backend
     const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
     const initialMatrixValues = JSON.parse('{{ initial_matrix_values | safe }}'); // Ambil data matriks input awal
+
+    // untuk membaca banyak submitted criteria
+    let criteriaCount = initialCriteriaLabels.length;
 
     document.addEventListener('DOMContentLoaded', function() {
         const numCriteriaInput = document.getElementById('num_criteria');
@@ -227,6 +293,8 @@
             submitBtn.style.display = 'none';
             return;
         }
+
+        criteriaCount = numCriteria;
 
         // --- Buat input nama kriteria ---
         let namesHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2 mt-4 text-center">Nama Kriteria:</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">';
@@ -503,104 +571,96 @@
 
 
     // BUAT EXCEL ---------------------------------------------------------------------------
-uploadExcelForm.addEventListener('submit', async function (e) {
-    e.preventDefault(); 
 
-    const formData = new FormData(this); 
-    formData.append('method_type', 'DEMATEL');
+    // function untuk membaca isi template yang diupload, hampir sama dengan yang ada di saw.html
+    uploadExcelForm.addEventListener('submit', async function (e) {
+        e.preventDefault(); 
 
-    const fileInput = this.querySelector('input[type="file"]');
-    if (fileInput.files.length === 0) {
-      Swal.fire({
-        title: "Error",
-        text: "No file selected.",
-        icon: "error"
-      });
+        const formData = new FormData(this); 
+        formData.append('method_type', 'DEMATEL');
 
-      return;
-    }
-
-
-    try {
-      Swal.fire({
-        title: "Upload?",
-        showCancelButton: true,
-        confirmButtonText: "Ya, upload",
-        text: "Semua data di tabel akan digantikan dengan data excel anda.",
-        icon: "question"
-      }).then(async (result) => {
-
-        if (result.isConfirmed) {
-          
-          const response = await fetch('/read-excel', { 
-            method: 'POST',
-            body: formData, 
-          });
-
-          let resultt = NaN
-
-          try {
-            resultt = await response.json();
-          } catch (jsonError) {
+        const fileInput = this.querySelector('input[type="file"]');
+        if (fileInput.files.length === 0) {
             Swal.fire({
-                icon: "error",
                 title: "Error",
-                text: "Pastikan template terisi dengan baik.",
+                text: "No file selected.",
+                icon: "error"
             });
-              
-          }
-          
 
-          if (response.ok) {
+            return;
+        }
 
-            // check if template suits excel (check if criteria names match)
-            console.log(resultt);
-            const firstRowInExcel = resultt.shift();
 
-            document.getElementById('num_criteria').value = firstRowInExcel.length;
-            generateMatrixInputs(firstRowInExcel, resultt);
+        try {
+        Swal.fire({
+            title: "Upload?",
+            showCancelButton: true,
+            confirmButtonText: "Ya, upload",
+            text: "Semua data di tabel akan digantikan dengan data excel anda.",
+            icon: "question"
+        }).then(async (result) => {
 
+            if (result.isConfirmed) {
+            
+            const response = await fetch('/read-excel', { 
+                method: 'POST',
+                body: formData, 
+            });
+
+            let resultt = NaN
+
+            try {
+                resultt = await response.json();
+            } catch (jsonError) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Pastikan template terisi dengan baik.",
+                });
+                
+            }
             
 
+            if (response.ok) {
 
-          } else {
-            
+                const firstRowInExcel = resultt.shift(); // merupakan nama-nama kriteria dari excel user
+
+                // update matrix
+                document.getElementById('num_criteria').value = firstRowInExcel.length;
+                generateMatrixInputs(firstRowInExcel, resultt);
+
+                
+
+
+            } else {
+                
+                Swal.fire({
+                    title: "Error",
+                    text: "Failed in reading file.",
+                    icon: "error"
+                });
+                
+            }
+            } 
+        });
+        } catch (error) {
             Swal.fire({
-              title: "Error",
-              text: "Failed in reading file.",
-              icon: "error"
+                title: "Error",
+                text: 'Network or parsing error:' + error,
+                icon: "error"
             });
             
-          }
-        } 
-      });
-    } catch (error) {
-      console.error('Network or parsing error:', error);
-      uploadMessageDiv.innerHTML = `<span class="text-red-600">An unexpected client-side error occurred: ${error.message}</span>`;
-      if (rowCount === 0) addRow(); // Ensure at least one row exists for manual input
-    }
-  });
+        }
+    });
 
 
-
+  // function untuk mengunduh template excel DEMATEL
   document.getElementById('downloadExcelButton').addEventListener('click', async function(e){
     e.preventDefault();
 
-    const numCriteriaInput = document.getElementById('num_criteria');
-    const criteriaCount = numCriteriaInput.value ? parseInt(numCriteriaInput.value) : 0;
 
-    // console.log(criteriaCount)
-
-    // let criteriaNames = [];
-    // for (let i = 0; i < criteriaCount; i++) {
-    //   const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
-    //   if (nameInput) {
-    //     criteriaNames.push(nameInput.value);
-    //   }
-    // }
 
     const formData = new FormData();
-    // formData.append('criterias', JSON.stringify(criteriaNames));
     formData.append('criteria_amount', criteriaCount);
     formData.append('template_name', 'DEMATEL');
 
@@ -615,9 +675,9 @@ uploadExcelForm.addEventListener('submit', async function (e) {
 
         if (result.isConfirmed) {
           
-          const response = await fetch('/download_template', { // Send to your Flask route
+          const response = await fetch('/download_template', {
             method: 'POST',
-            body: formData, // FormData handles 'multipart/form-data' correctly
+            body: formData, 
           });
 
           try {
@@ -626,13 +686,6 @@ uploadExcelForm.addEventListener('submit', async function (e) {
              if (response.ok) { 
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = 'template DEMATEL.xlsx'; 
-                // if (contentDisposition && contentDisposition.includes('attachment')) {
-                    
-                //     const filenameMatch = contentDisposition.match(/filename\*?=['"]?(?:UTF-8''|[^;']*)?([^;']+)/);
-                //     if (filenameMatch && filenameMatch[1]) {
-                //         filename = decodeURIComponent(filenameMatch[1]);
-                //     }
-                // }
 
 
                 const blob = await response.blob();
@@ -668,11 +721,12 @@ uploadExcelForm.addEventListener('submit', async function (e) {
   });
 
 
+    // instruction modal toggle
+    const instructionModal = document.getElementById('instruction-modal');
+    function toggleDirectionModal() {
+        document.body.classList.toggle('no-scroll');
+        instructionModal.classList.toggle('hidden');
+    }
 
-//   const instructionModal = document.getElementById('instruction-modal');
-//   function toggleDirectionModal() {
-//     document.body.classList.toggle('no-scroll');
-//     instructionModal.classList.toggle('hidden');
-//   }
 </script>
 {% endblock %}
