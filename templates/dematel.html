@@ -8,7 +8,7 @@
     <!-- CSV -->
     <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
         <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="flex-col flex">
-        <label class="block font-semibold mb-2">Upload data perhitungan SAW (optional):</label>
+        <label class="block font-semibold mb-2">Upload data perhitungan DEMATEL (optional):</label>
         <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="mb-3 block w-full text-gray-700
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0
@@ -523,10 +523,10 @@ uploadExcelForm.addEventListener('submit', async function (e) {
 
     try {
       Swal.fire({
-        title: "Continue?",
+        title: "Upload?",
         showCancelButton: true,
-        confirmButtonText: "Continue",
-        text: "All data in table will be replaced with your excel file data.",
+        confirmButtonText: "Ya, upload",
+        text: "Semua data di tabel akan digantikan dengan data excel anda.",
         icon: "question"
       }).then(async (result) => {
 
@@ -606,9 +606,9 @@ uploadExcelForm.addEventListener('submit', async function (e) {
 
     try {
       Swal.fire({
-        title: "Continue?",
+        title: "Unduh?",
         showCancelButton: true,
-        confirmButtonText: "Continue",
+        confirmButtonText: "Ya, unduh",
         text: "Bentuk template akan mengikuti jumlah kriteria.",
         icon: "question"
       }).then(async (result) => {
