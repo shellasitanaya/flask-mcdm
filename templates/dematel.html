@@ -92,9 +92,9 @@
     // Inisialisasi variabel untuk menyimpan instance network (Vis.js)
     let networkInstance = null;
 
-    // Ambil label kriteria awal dari backend
+    // Ambil data matriks input dan label awal kriteria awal dari backend
     const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
-    const initialMatrixValues = JSON.parse('{{ initial_matrix_values | safe }}'); // Ambil data matriks input awal
+    const initialMatrixValues = JSON.parse('{{ initial_matrix_values | safe }}');
 
     document.addEventListener('DOMContentLoaded', function() {
         const numCriteriaInput = document.getElementById('num_criteria');
@@ -119,7 +119,7 @@
                 cancelButtonText: 'Batal'
             });
 
-            // If the user confirms (clicks "Ya, Hitung!")
+            // jika user mengonfirmasi perhitungan dematel
             if (result.isConfirmed) {
 
                 const numCriteria = parseInt(document.getElementById('num_criteria').value);
@@ -145,7 +145,7 @@
                 }
 
                 try {
-                    // Kirim data ke Flask melalui Fetch API
+                    // Kirim data ke backend
                     const response = await fetch('/dematel', {
                         method: 'POST',
                         headers: {
@@ -162,11 +162,10 @@
                             icon: 'success',
                             title: 'Perhitungan Berhasil!',
                             text: 'Hasil DEMATEL telah ditampilkan.',
-                            // timer: 2000,
                             showConfirmButton: true
                         });
                     } else {
-                        // Tampilkan error menggunakan SweetAlert
+                        // Tampilkan error jika ada
                         Swal.fire({
                             icon: 'error',
                             title: 'Terjadi Kesalahan!',
@@ -175,14 +174,14 @@
                         });
                         // Hapus hasil sebelumnya saat terjadi error
                         document.getElementById('results-container').innerHTML = '';
-                        // Hancurkan chart jika ada error
+                        // Hapus chart jika terdapat error
                         if (networkInstance) {
                             networkInstance.destroy();
                             networkInstance = null;
                         }
                     }
                 } catch (error) {
-                    // Tangani kesalahan jaringan atau respons tak terduga
+                    // untuk menangani kesalahan jaringan atau respons tak terduga
                     console.error('Fetch error:', error);
                     Swal.fire({
                         icon: 'error',
@@ -191,7 +190,7 @@
                         confirmButtonText: 'OK'
                     });
                     document.getElementById('results-container').innerHTML = '';
-                    // Hancurkan chart jika ada error
+                    // hapus chart jika terdapat error
                     if (networkInstance) {
                         networkInstance.destroy();
                         networkInstance = null;
@@ -209,9 +208,9 @@
 
         criteriaNamesContainer.innerHTML = ''; // Bersihkan nama kriteria sebelumnya
         matrixContainer.innerHTML = ''; // Bersihkan kontainer matriks sebelumnya
-        document.getElementById('results-container').innerHTML = ''; // Clear results when inputs regenerated
+        document.getElementById('results-container').innerHTML = ''; // Bersihkan hasil sebelumnya
 
-        // Destroy existing network instance if inputs are regenerated
+        // Hapus instance network jika ada sebelumnya
         if (networkInstance) {
             networkInstance.destroy();
             networkInstance = null;
@@ -228,10 +227,10 @@
             return;
         }
 
-        // --- Buat input nama kriteria ---
+        // Buat input nama kriteria
         let namesHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2 mt-4 text-center">Nama Kriteria:</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">';
         for (let i = 0; i < numCriteria; i++) {
-            // Gunakan label dari predefinedLabels jika ada, jika tidak, gunakan default "Kriteria X"
+            // Gunakan label dari predefinedLabels jika ada, jika tidak, gunakan default "Kriteria 1", "Kriteria 2", dst.
             const currentLabel = predefinedLabels[i] !== undefined && predefinedLabels[i] !== null ? predefinedLabels[i] : '';
             namesHtml += `
                 <div class="flex items-center space-x-2">
@@ -244,7 +243,7 @@
         criteriaNamesContainer.innerHTML = namesHtml;
 
 
-        // --- Buat matriks input ---
+        // Buat matriks input
         const tableWrapper = document.createElement('div');
         tableWrapper.className = 'overflow-x-auto mb-6 rounded-lg shadow-sm border border-gray-300';
         const table = document.createElement('table');
@@ -277,11 +276,10 @@
         table.appendChild(tbody);
         tableWrapper.appendChild(table); 
         matrixContainer.appendChild(tableWrapper);
-        // matrixContainer.appendChild(table);
         submitBtn.style.display = 'block';
     }
 
-    // Function to dynamically display results
+    // function untuk menampilkan hasil perhitungan DEMATEL
     function displayResults(results) {
         const resultsContainer = document.getElementById('results-container');
         resultsContainer.innerHTML = ''; // Clear previous results
@@ -334,8 +332,8 @@
                 ` : ''}
             `;
 
+            // Jika ini adalah tabel akhir (menghitung Ri dan Ci), tambahkan ringkasan
             if (isFinalTable) {
-                // Access the new combined_summary_data directly
                 const summaryData = results.combined_summary_data;
 
                 tableHtml = `
@@ -380,7 +378,7 @@
         renderTable('Matriks Hubungan Total (Total Relation Matrix)', results.total_relation_matrix, false, threshold);
 
 
-        // --- Bagian Diagram Kausal (Vis.js Network) ---
+        // Bagian Diagram Kausal (Menggunakan Vis.js Network) 
         resultsContainer.insertAdjacentHTML('beforeend', `
             <h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4 text-center">Diagram Kausal (Hubungan Total)</h3>
             <div class="flex relative mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="max-width: 800px; height: 500px; margin: 0 auto;">
@@ -388,7 +386,7 @@
             </div>
         `);
 
-        // Hancurkan instance network yang ada sebelumnya untuk menghindari duplikasi
+        // hapus instance network yang ada sebelumnya untuk menghindari duplikasi
         if (networkInstance) {
             networkInstance.destroy();
             networkInstance = null;
@@ -433,12 +431,8 @@
         const data = { nodes: nodes, edges: edges };
         const options = {
             layout: {
-                // Gunakan algoritma fisika untuk tata letak otomatis
-                // Bisa juga 'hierarchical' jika ingin tata letak hirarkis
-                // atau 'random' untuk tata letak acak
-                // Untuk diagram kausal, 'force-directed' (default) seringkali cocok
                 improvedLayout: true,
-                randomSeed: undefined, // Gunakan seed untuk tata letak yang konsisten antar reload
+                randomSeed: undefined, 
             },
             physics: {
                 enabled: true,
@@ -455,11 +449,8 @@
                 solver: 'barnesHut',
                 stabilization: {
                     enabled: true,
-                    iterations: 2000, // Banyak iterasi untuk stabilisasi
+                    iterations: 2000, 
                     updateInterval: 100,
-                    //fit: true, // Auto-fit to view
-                    //onlyDynamicEdges: false,
-                    //stabilizationIterations: 2000
                 },
                 adaptiveTimestep: true
             },
@@ -475,7 +466,7 @@
                 color: { inherit: 'from' },
                 smooth: {
                     enabled: true,
-                    type: 'continuous' // atau 'cubicBezier'
+                    type: 'continuous' 
                 },
                 shadow: true
             },
@@ -494,9 +485,9 @@
         // Buat instance network
         networkInstance = new vis.Network(container, data, options);
 
-        // Setelah stabilisasi, pastikan diagram pas di layar dan MATIKAN FISIKA
+        // Setelah stabilisasi, pastikan diagram pas di layar dan MATIKAN FISIKA (agar tidak bergerak terus)
         networkInstance.once('stabilizationIterationsDone', function() {
-            networkInstance.setOptions( { physics: false } ); // <-- ADD THIS LINE
+            networkInstance.setOptions( { physics: false } ); 
             networkInstance.fit();
         });
     }

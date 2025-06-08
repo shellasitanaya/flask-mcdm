@@ -249,14 +249,18 @@ def saw():
 # dematel
 @app.route('/dematel', methods=['GET', 'POST'])
 def dematel():
+    # Jika user melakukan POST request (perhitungan DEMATEL)
     if request.method == 'POST':
         try:
+            # Ambil input label dan jumlah tiap kriteria 
             num_criteria = int(request.json['num_criteria'])
             criteria_labels = request.json.get('criteria_labels', [])
 
-            # Bersihkan label: gunakan default jika kosong
+            # Bersihkan label (spasi di awal maupun di akhir), gunakan default jika hasilnya kosong
+            # Contoh kriteria default: Kriteria 1, Kriteria 2, dst.
             criteria_labels = [label.strip() or f'Kriteria {i+1}' for i, label in enumerate(criteria_labels)]
-            # Pastikan criteria_labels memiliki panjang yang benar (jika ada yang terlewat dari frontend)
+
+            # Memastikan criteria_labels memiliki panjang yang benar (jika ada yang terlewat dari frontend)
             if len(criteria_labels) < num_criteria:
                 for i in range(len(criteria_labels), num_criteria):
                     criteria_labels.append(f'Kriteria {i+1}')
@@ -264,6 +268,7 @@ def dematel():
             if num_criteria <= 1:
                 return jsonify({'success': False, 'message': 'Jumlah kriteria harus lebih dari 1.'}), 400
 
+            # Ambil data matriks awal dari input
             matrix_data = []
             for i in range(num_criteria):
                 row = []
@@ -272,51 +277,57 @@ def dematel():
                     row.append(val)
                 matrix_data.append(row)
 
+            # Membuat matriks awal dari data yang diterima
             initial_matrix = np.array(matrix_data)
 
             # --- Langkah-langkah Perhitungan DEMATEL ---
+            # 1. Normalisasi Matriks
+            # a. Mencari jumlah maksimum dari setiap baris
+            # b. Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             max_sum = np.sum(initial_matrix, axis=1).max()
             normalized_matrix = initial_matrix / max_sum
 
+            # 2. Matriks Hubungan Total
+            # a. Menghitung matriks hubungan total dengan rumus: T = Y . (I-Y)^-1
             identity_matrix = np.identity(num_criteria)
             inv_part = np.linalg.inv(identity_matrix - normalized_matrix)
             total_relation_matrix = normalized_matrix @ inv_part
 
+            # 3. Hitung D (Ri), R (Ci), Prominence, Causal
             D = np.sum(total_relation_matrix, axis=1)
             R = np.sum(total_relation_matrix, axis=0)
 
             prominence = D + R      # Ri
             causal = D - R          # Ci
 
-            # --- Hitung Type of Identity ---
+            # --- Hitung Type of Identity (identitas) berdasarkan nilai Ri - Ci ---
             identity_types = []
             for val in causal:
                 if val > 0.0001:  # Menggunakan sedikit toleransi untuk floating point
                     identity_types.append('Cause')
-                elif val < -0.0001: # Menggunakan sedikit toleransi untuk floating point
-                    identity_types.append('Effect')
                 else:
-                    identity_types.append('Neutral')
+                    identity_types.append('Effect')
 
             # --- Combine D, R, Prominence, Causal, and Identity Type ---
-            # Create a list of dictionaries for easier rendering on frontend
+            # Membuat list of dictionaries untuk tabel summary D, R, Prominence, Causal, dan Identity Type
             combined_summary_data = []
             for i in range(num_criteria):
                 combined_summary_data.append({
                     'label': criteria_labels[i],
-                    'D': D[i].item(),  # Use .item() to get Python scalar from NumPy float
+                    'D': D[i].item(),  
                     'R': R[i].item(),
                     'prominence': prominence[i].item(),
                     'causal': causal[i].item(),
                     'type': identity_types[i]
                 })
 
+            # --- Hasilkan JSON untuk dikirim ke frontend ---
             results = {
                 'initial_matrix': initial_matrix.tolist(),
                 'normalized_matrix': normalized_matrix.tolist(),
                 'total_relation_matrix': total_relation_matrix.tolist(),
-                'criteria_labels': criteria_labels, # Still useful for matrix headers etc.
-                'combined_summary_data': combined_summary_data # New combined data
+                'criteria_labels': criteria_labels, 
+                'combined_summary_data': combined_summary_data 
             }
             return jsonify({'success': True, 'results': results})
 
@@ -327,9 +338,10 @@ def dematel():
         except Exception as e:
             return jsonify({'success': False, 'message': f'Terjadi kesalahan tak terduga: {str(e)}'}), 500
         
-    else: # GET request
-        # Inisialisasi kriteria default saat halaman dimuat
-        num_criteria = 6 # Jumlah kriteria default
+    else: # GET request (akses halaman awal DEMATEL, tanpa input)
+        # Inisialisasi kriteria default saat halaman dimuat (untuk Tabitha The Hopeful Scholarship)
+        # Jumlah kriteria, label, dan nilai matriks awal default
+        num_criteria = 6 
         initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] 
         initial_matrix_values = [
             [0, 1, 1, 4, 4, 1], 
@@ -344,6 +356,7 @@ def dematel():
             for i in range(len(initial_criteria_labels), num_criteria):
                 initial_criteria_labels.append(f'Kriteriaa {i+1}')
 
+        # Menampilkan halaman DEMATEL dengan nilai awal
         return render_template('dematel.html',
                             num_criteria=num_criteria,
                             criteria_labels_json=json.dumps(initial_criteria_labels), 
