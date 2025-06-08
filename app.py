@@ -374,6 +374,9 @@ def phpexample():
     else:
         return jsonify({"error": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}), 400
     
+    if(request.form.get('method_type') is not None and request.form.get('method_type')=="DEMATEL"):
+        df.drop(columns=df.columns[0], inplace=True)
+        
     data = df.values.tolist()
 
     for idx1, row in enumerate(data):
@@ -407,7 +410,7 @@ def download_template():
 
     if template_name == "DEMATEL":
         criteria_amount = int(request.form.get('criteria_amount'))
-        print(f"CRITERIA AMOUNT: {criteria_amount}")
+        # print(f"CRITERIA AMOUNT: {criteria_amount}")
         last_col_idx = 1 + criteria_amount
 
         ws.append([''] + [f'C{i}' for i in range(1, criteria_amount+1)])
@@ -416,21 +419,29 @@ def download_template():
             ws.append([f'C{i}'] + [0]*criteria_amount)
 
 
-        for i in range(1, last_col_idx):
+        for i in range(1, 200):
             # make first row bold
             cell = ws.cell(row=1, column=i+1) 
             cell.font = Font(bold=True)
             cell.alignment = Alignment(wrap_text=True, vertical='center')
-            cell.comment = Comment("Ganti nama sesuai dengan kriteria anda.", "Author")
-            # make first column bold
-            cell = ws.cell(row=i+1, column=1, value=f'={get_column_letter(i+1)}1')
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(wrap_text=True, vertical='center')
-            # for uneditable zeros
+            if i < last_col_idx:
+                cell.comment = Comment("Ganti nama sesuai dengan kriteria anda.", "Author")
+            # for diagonal zeros
             cell = ws.cell(row=i+1, column=i+1) 
             # cell.protection = Protection(locked=True)
             cell.font = Font(bold=True, color="FF0000") 
-            cell.comment = Comment("Angka merah tidak perlu diubah", "Author")
+            if i < last_col_idx:
+                cell.comment = Comment("Angka merah tidak perlu diubah", "Author")
+            # make first column bold
+            referenced_cell_name = f'{get_column_letter(i+1)}1'
+            formula_string = f'=IF(ISBLANK({referenced_cell_name}),"",{referenced_cell_name})'
+
+            cell = ws.cell(row=i+1, column=1, value=formula_string)
+            
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(wrap_text=True, vertical='center')
+
+           
 
         # atur lebar
         # ws.column_dimensions['A'].width = 25 
@@ -454,7 +465,10 @@ def download_template():
 
         # nama sheets
         ws.title = "Input Data DEMATEL"
-        ws.protection.sheet = True
+        # ws.protection.sheet = True
+
+        # comment kalok boleh nambah kriteria
+        ws.cell(row=1, column=last_col_idx+1).comment = Comment("Tambah kriteria di sini.", "Author")
 
         
     elif template_name == "SAW":
