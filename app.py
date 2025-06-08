@@ -25,19 +25,23 @@ default_criteria = [
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak kuat<br>2: Kurang kuat<br>3: Cukup kuat<br>4: Kuat<br>5: Sangat kuat"},
 ]
 
-# Normalisai matrix berdasarkan tipe kriteria
+# Fungsi untuk melakukan normalisasi matrix berdasarkan tipe kriteria
 def normalize(matrix, types):
+    # List untuk menyimpan matriks yang sudah dinormalisasi
     normalized = []
     matrix_T = list(zip(*matrix))
 
+    # Iterasi melalui setiap kolom (yang merepresentasikan satu kriteria)
     for j, col in enumerate(matrix_T):
         tipe = types[j]
         col = list(col)
+        # Untuk kriteria 'Benefit' (semakin besar semakin baik)
         if tipe == 'Benefit':
             max_val = max(col)
             # Handle case where all values are zero for a benefit criterion
             norm_col = [x / max_val if max_val != 0 else 0 for x in col]
-        else:  # Cost
+        # Untuk kriteria 'Cost' (semakin kecil semakin baik)    
+        else:  
             min_val = min(col)
             # Handle case where min_val is 0 and x is 0
             norm_col = [min_val / x if x != 0 else 0 for x in col]
@@ -45,15 +49,30 @@ def normalize(matrix, types):
 
     return list(map(list, zip(*normalized)))
 
-# Matriks Normalisasi x bobot kriteria
-def calculate_saw(matrix, weights, types):
+# Fungsi untuk mengalikan matriks normalisasi dengan bobot kriteria
+def calculate_saw(matrix, weights, types): 
+    # STEP 1 >> Normalisasi Matriks Keputusan
+    # Memanggil fungsi normalize() untuk mendapatkan matriks yang sudah dinormalisasi. 
     normalized = normalize(matrix, types)
     weighted_matrix = []
     scores = []
+
+    # Iterasi melalui setiap baris di matriks yang sudah dinormalisasi (setiap baris mewakili satu alternatif)
     for row in normalized:
+        # STEP 2 >> Perkalian Matriks Normalisasi dengan Bobot Kriteria
+        # Mengalikan setiap nilai yang dinormalisasi dalam baris dengan bobot kriteria yang sesuai.
+        # w: bobot kriteria, r: nilai yang sudah dinormalisasi untuk kriteria tersebut.
         weighted_row = [w * r for w, r in zip(weights, row)]
         weighted_matrix.append(weighted_row)
+
+        # STEP 3 >> Penjumlahan Terbobot (Mendapatkan Skor Akhir)
+        # Menjumlahkan semua nilai dalam baris yang sudah terbobot untuk mendapatkan skor akhir (Vi) alternatif tersebut.
         scores.append(sum(weighted_row))
+
+    # Mengembalikan tiga hasil:
+    # 1. scores: Daftar skor akhir (nilai preferensi) untuk setiap alternatif.
+    # 2. normalized: Matriks keputusan yang sudah dinormalisasi.
+    # 3. weighted_matrix: Matriks yang sudah dinormalisasi dan dikalikan dengan bobot kriteria.
     return scores, normalized, weighted_matrix
 
 @app.route('/')
@@ -86,7 +105,7 @@ def utility_processor():
     
     return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
     
-# Route untuk halaman SAW (Simple Additive Weighting)
+# Route untuk halaman SAW 
 @app.route('/saw', methods=['GET', 'POST'])
 # Inisialisasi variabel untuk menyimpan data dan hasil perhitungan
 def saw():
