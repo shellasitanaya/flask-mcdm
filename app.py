@@ -88,6 +88,7 @@ def utility_processor():
     
 # Route untuk halaman SAW (Simple Additive Weighting)
 @app.route('/saw', methods=['GET', 'POST'])
+# Inisialisasi variabel untuk menyimpan data dan hasil perhitungan
 def saw():
     errors = []
     alternatives = []
@@ -104,6 +105,7 @@ def saw():
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
+        # Logika untuk submit form Kriteria 
         if form_type == 'criteria':
             submitted_criteria = []
             criteria_count_str = request.form.get('criteria_count_input')
@@ -156,8 +158,9 @@ def saw():
                 flash('Kriteria berhasil disimpan!', 'success')
 
 
+        # Logika untuk submit form Input Data Alternatif & Hitung SAW 
         elif form_type == 'saw':
-            # --- Membangun kembali list 'criteria' dari hidden inputs ---
+            # Membangun kembali list 'criteria' dari hidden inputs 
             existing_criteria_count_str = request.form.get('existing_criteria_count', '0')
             try:
                 existing_criteria_count = int(existing_criteria_count_str)
@@ -217,11 +220,14 @@ def saw():
                     if not alternatives or not matrix or len(alternatives) != alt_count or len(matrix) != alt_count:
                          errors.append("Data alternatif atau matriks tidak lengkap/kosong.")
 
+                    # Jika tidak ada error dan semua data input lengkap, lakukan perhitungan SAW
                     if not errors and alternatives and matrix and criteria:
                         weights = [c['bobot'] for c in criteria]
                         types = [c['tipe'] for c in criteria]
                         try:
+                            # Memanggil fungsi calculate_saw untuk mendapatkan skor, matriks normalisasi, dan matriks terbobot
                             scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
+                            # Mengurutkan alternatif berdasarkan skor tertinggi
                             ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
                             flash('Perhitungan SAW berhasil!', 'success')
                         except Exception as e:
