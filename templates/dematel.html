@@ -69,7 +69,7 @@
     </div>
     <hr class="my-10 border-t border-gray-300">
 
-    <div id="results-container" class="results mt-10 mb-8 p-4 bg-white rounded-lg shadow-md "></div>
+    <div id="results-container" class="results mt-10 mb-8 bg-white rounded-lg shadow-md "></div>    
 </div>
 
 
@@ -350,6 +350,7 @@
     // function untuk menampilkan hasil perhitungan DEMATEL
     function displayResults(results) {
         const resultsContainer = document.getElementById('results-container');
+        resultsContainer.classList.add('p-4');
         resultsContainer.innerHTML = ''; // Clear previous results
 
         const criteriaLabels = results.criteria_labels; // Dapatkan label kriteria dari hasil
