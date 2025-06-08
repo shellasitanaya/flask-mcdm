@@ -50,6 +50,7 @@
           {% for c in criteria %}
           {% set i = loop.index0 %}
           <tr>
+            <!-- <input type="hidden" name="criteria_description_{{i}}" value="{{ c.description }}" > -->
             <td class="border border-gray-300 px-2 py-1">
               <input type="text" name="criteria_name_{{i}}"
                 class="w-full border border-gray-300 rounded px-2 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
@@ -396,13 +397,53 @@
         </tr>
 
         
-          {% for c in criteria %}
         <tr>
-          <td>{{ c.nama }}</td>
-          <td>{{ c.tipe }}</td>
-          <td class="text-sm sm:text-base">{{ c.description | safe }}</td>
+          <td>IPS</td>
+          <td>Benefit</td>
+          <td class="text-sm sm:text-base">
+            Isi dengan IPS yang paling baru (3.01-4.00)
+          </td>
         </tr>
-          {% endfor %}
+          
+        <tr>
+          <td>Aktif Kemahasiswaan</td>
+          <td>Benefit</td>
+          <td class="text-sm sm:text-base">
+            Beri nilai 1-5, dimana:<br>1: Tidak aktif<br>2: Sedikit aktif<br>3: Cukup aktif<br>4: Aktif<br>5: Sangat aktif
+          </td>
+        </tr>
+
+        <tr>
+          <td>Kondisi Ekonomi</td>
+          <td>Cost</td>
+          <td class="text-sm sm:text-base">
+            Beri nilai 1-5, dimana:<br>1: Tidak berkecukupan<br>2: Sedikit berkecukupan<br>3: Cukup berkecukupan<br>4: Bercukupan<br>5: Sangat bercukupan
+          </td>
+        </tr>
+
+        <tr>
+          <td>Semester</td>
+          <td>Benefit</td>
+          <td class="text-sm sm:text-base">
+            Isi dengan semester peserta (2-14)
+          </td>
+        </tr>
+          
+        <tr>
+          <td>Berprestasi</td>
+          <td>Benefit</td>
+          <td class="text-sm sm:text-base">
+            Beri nilai 1-5, dimana:<br>1: Tidak berprestasi<br>2: Sedikit berprestasi<br>3: Cukup berprestasi<br>4:Berprestasi<br>5: Sangat berprestasi
+          </td>
+        </tr>
+
+        <tr>
+          <td>Motivasi</td>
+          <td>Benefit</td>
+          <td class="text-sm sm:text-base">
+            Beri nilai 1-5, dimana:<br>1: Tidak kuat<br>2: Kurang kuat<br>3: Cukup kuat<br>4: Kuat<br>5: Sangat kuat
+          </td>
+        </tr>
         
 
       </table>
@@ -635,10 +676,12 @@
       const nameInput = row.querySelector(`input[name^="criteria_name_"]`);
       const weightInput = row.querySelector(`input[name^="criteria_weight_"]`);
       const typeSelect = row.querySelector(`select[name^="criteria_type_"]`);
+      // const descInput = row.querySelector(`input[name^="criteria_description_"]`);
 
       if (nameInput) nameInput.name = `criteria_name_${index}`;
       if (weightInput) weightInput.name = `criteria_weight_${index}`;
       if (typeSelect) typeSelect.name = `criteria_type_${index}`;
+      // if (descInput) descInput.name = `criteria_description_${index}`;
     });
   }
 

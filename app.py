@@ -123,7 +123,7 @@ def saw():
                 name = request.form.get(f'criteria_name_{i}', '').strip()
                 bobot_str = request.form.get(f'criteria_weight_{i}', '0')
                 tipe = request.form.get(f'criteria_type_{i}', 'Benefit').strip()
-                description = request.form.get(f'criteria_description_{i}', '').strip() 
+                # description = request.form.get(f'criteria_description_{i}', '').strip() 
 
 
                 if not name:
@@ -132,6 +132,7 @@ def saw():
                     errors.append(f"Bobot untuk kriteria '{name or f'ke-{i+1}'}' harus diisi.")
                 if not tipe:
                     errors.append(f"Tipe untuk kriteria '{name or f'ke-{i+1}'}' harus dipilih.")
+    
                 
                 try:
                     bobot = float(bobot_str)
