@@ -60,8 +60,10 @@ def calculate_saw(matrix, weights, types):
 def home():
     return render_template('home.html')
 
+# Context processor untuk menyediakan data placeholder dan fungsi get_placeholder_range ke semua template
 @app.context_processor
 def utility_processor():
+    # Fungsi ini mengembalikan string placeholder berdasarkan nama kriteria
     def get_placeholder_range(criteria_name):
         criteria_name_lower = criteria_name.lower()
         if criteria_name_lower == 'ips':
@@ -84,7 +86,7 @@ def utility_processor():
     
     return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
     
-# Inputan dari form
+# Route untuk halaman SAW (Simple Additive Weighting)
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
     errors = []
@@ -95,7 +97,6 @@ def saw():
     scores = []
     ranked = []
 
-    # --- Bagian PENTING yang berubah: Inisialisasi Kriteria ---
     # Jika GET request, gunakan default_criteria.
     # Jika POST request, kriteria akan dibaca dari form_type yang sesuai.
     criteria = default_criteria.copy()
@@ -151,16 +152,11 @@ def saw():
                 criteria = submitted_criteria # Gunakan kriteria yang disubmit (meskipun ada error)
             else:
                 criteria = submitted_criteria # Gunakan kriteria baru yang berhasil
-                # Hapus baris ini: session['criteria'] = criteria # <--- HAPUS INI
                 flash('Kriteria berhasil disimpan!', 'success')
-            
-            # Tidak perlu `return render_template` di sini. Biarkan alur kode berlanjut
-            # ke `return render_template` di akhir fungsi, yang akan menggunakan
-            # nilai `criteria` yang sudah diupdate.
 
 
         elif form_type == 'saw':
-            # --- Perubahan utama: Membangun kembali 'criteria' dari hidden inputs ---
+            # --- Membangun kembali list 'criteria' dari hidden inputs ---
             existing_criteria_count_str = request.form.get('existing_criteria_count', '0')
             try:
                 existing_criteria_count = int(existing_criteria_count_str)
@@ -168,8 +164,8 @@ def saw():
                 errors.append("Jumlah kriteria yang disubmit tidak valid.")
                 existing_criteria_count = 0
             
-            # Bangun ulang list 'criteria' dari hidden inputs
-            criteria = [] # Reset criteria to be built from hidden inputs
+            #  Reset criteria untuk dibangun dari hidden inputs
+            criteria = []
             for i in range(existing_criteria_count):
                 name = request.form.get(f'existing_criteria_name_{i}', '').strip()
                 weight_str = request.form.get(f'existing_criteria_weight_{i}', '0').strip()
@@ -199,6 +195,7 @@ def saw():
                 if not errors:
                     for i in range(alt_count):
                         alt_name = request.form.get(f'alt_name_{i}', '').strip()
+                        # Kalau nama alternatif kosong, gunakan nama default (A1, A2, dst.)
                         if not alt_name:
                             alt_name = f'A{i+1}'
                         alternatives.append(alt_name)

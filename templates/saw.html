@@ -111,8 +111,16 @@
 
   <div class="mb-8 p-4 bg-white rounded-lg shadow-md">
     <form id="uploadExcelForm" method="post" enctype="multipart/form-data" class="flex-col flex">
-      <label class="block font-semibold mb-2">Upload data perhitungan SAW (optional):</label>
-      <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="mb-3">
+      <label class="block font-semibold mb-2">Upload data perhitungan SAW (optional):</label> 
+
+      <input type="file" name="excel_file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+      class="mb-3 block w-full text-gray-700
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100 cursor-pointer"> 
+
       <div class="flex items-center mt-4">
         <a id="downloadExcelButton" class="hover:cursor-pointer bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2 ">📄 Unduh Template</a>
         <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold shadow-md">⇪ Upload</button>
@@ -140,7 +148,7 @@
     </div>
     
 
-    {# START: Responsive Table Wrapper for SAW Input #}
+    <!-- table wrapper -->
     <div class="overflow-x-auto rounded-lg border border-gray-300">
       <table class="min-w-full table-auto border-collapse" id="sawTable">
         <thead>
@@ -212,7 +220,7 @@
         </tbody>
       </table>
     </div>
-    {# END: Responsive Table Wrapper for SAW Input #}
+    <!-- end table wrapper -->
 
     <button type="button" id="addRowBtn"
       class="mt-8 bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md mr-2">+
@@ -406,18 +414,15 @@
 
 
 <script>
-  let rowCount; // Akan diinisialisasi dari DOMContentLoaded
+  // Variabel global 
+  let rowCount; 
   const altCountInput = document.getElementById('altCount');
   const uploadExcelForm = document.getElementById('uploadExcelForm');
   const tableBody = document.getElementById('tableBody');
   const sawForm = document.getElementById('sawForm');
   const submitSawBtn = document.getElementById('submitSawBtn');
-
-  // Tambahkan variabel untuk form kriteria dan tombol submit-nya
   const criteriaForm = document.getElementById('criteriaForm');
   const submitCriteriaBtn = document.getElementById('submitCriteriaBtn');
-
-
   const downloadExcelForm = document.getElementById('downloadExcelForm');
 
 
@@ -426,18 +431,18 @@
     let attrs = { placeholder: '', min_max_step: 'step="any"' };
     switch (criteriaName.toLowerCase()) {
       case 'ips':
-        attrs.placeholder = '0-4';
-        attrs.min_max_step = 'min="0" max="4" step="0.01"';
+        attrs.placeholder = '3.01-4';
+        attrs.min_max_step = 'min="3.01" max="4" step="0.01"';
         break;
       case 'semester':
-        attrs.placeholder = '1-14';
-        attrs.min_max_step = 'min="1" max="14" step="1"';
+        attrs.placeholder = '2-14';
+        attrs.min_max_step = 'min="2" max="14" step="1"';
         break;
       case 'aktif kemahasiswaan':
       case 'kondisi ekonomi':
-      // case 'berprestasi':
+      case 'berprestasi':
       case 'motivasi':
-        attrs.placeholder = '1-5'; // Assuming a scale of 1-5
+        attrs.placeholder = '1-5'; 
         attrs.min_max_step = 'min="1" max="5" step="1"';
         break;
       default:
@@ -449,6 +454,8 @@
   }
 
 
+  // Fungsi untuk menghitung jumlah baris di tabel alternatif
+  // Hasil hitungannya akan disimpan di dalam input tersembunyi `altCount`.
   function updateAltCount() {
     const rowElements = tableBody.querySelectorAll('tr');
     const actualRows = Array.from(rowElements).filter(row =>
@@ -458,10 +465,12 @@
     rowCount = actualRows.length; 
   }
 
+  // Kode ini akan berjalan ketika tombol "Tambah Alternatif" diklik.
   document.getElementById('addRowBtn').addEventListener('click', function () {
     const criteriaCountInput = document.querySelector('#sawForm input[name="existing_criteria_count"]');
     const criteriaCount = criteriaCountInput ? parseInt(criteriaCountInput.value) : 0;
 
+     // Jika belum ada kriteria, tampilkan pesan peringatan dan hentikan fungsi.
     if (isNaN(criteriaCount) || criteriaCount <= 0) {
       Swal.fire({
         title: 'Kriteria Belum Ada!',
@@ -473,6 +482,7 @@
       return;
     }
 
+    // Ambil semua nama kriteria yang ada untuk digunakan di baris baru.
     const criteriaNames = [];
     for (let i = 0; i < criteriaCount; i++) {
       const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
@@ -504,10 +514,13 @@
     updateAltCount(); 
   });
 
+  // Kode ini mendeteksi klik di dalam area tabel alternatif.
+  //  Jika yang diklik adalah tombol "Hapus", maka baris tersebut akan dihapus.
   tableBody.addEventListener('click', function (e) {
     if (e.target.classList.contains('remove-row')) {
       const row = e.target.closest('tr');
 
+      // Menampilkan pesan konfirmasi sebelum benar-benar menghapus.
       Swal.fire({
         title: 'Konfirmasi Hapus Alternatif',
         text: "Apakah Anda yakin ingin menghapus alternatif ini? Tindakan ini tidak bisa dibatalkan.",
@@ -518,10 +531,11 @@
         confirmButtonText: 'Ya, Hapus!',
         cancelButtonText: 'Batal'
       }).then((result) => {
+        // Jika pengguna menekan tombol "Ya, Hapus".
         if (result.isConfirmed) {
-          row.remove();
-          updateAltCount();
-          reindexAlternativesRows(); 
+          row.remove();  // Hapus baris dari tabel.
+          updateAltCount(); // Hitung ulang jumlah baris.
+          reindexAlternativesRows(); // Perbarui urutan nomor indeks input
           Swal.fire(
             'Terhapus!',
             'Alternatif berhasil dihapus.',
@@ -532,7 +546,7 @@
     }
   });
 
-  // Fungsi BARU untuk reindexing baris alternatif setelah penghapusan
+  // Fungsi untuk reindexing baris alternatif setelah penghapusan
   function reindexAlternativesRows() {
     const alternativeRows = tableBody.querySelectorAll('tr');
     alternativeRows.forEach((row, index) => {
@@ -548,13 +562,14 @@
     updateAltCount(); 
   }
 
-  // --- Kriteria Section JavaScript ---
+  // Fungsi untuk menghitung jumlah baris kriteria.
   function updateCriteriaCountInput() {
     const criteriaRows = document.querySelectorAll('#criteriaList tr');
     document.getElementById('criteriaCountInput').value = criteriaRows.length;
   }
 
 
+  // Fungsi untuk menambah baris kriteria baru.
   function addCriteriaRow() {
     const tbody = document.getElementById("criteriaList");
     const currentCriteriaCount = tbody.querySelectorAll('tr').length;
@@ -584,7 +599,7 @@
     calculateAndDisplayTotalWeight();
   }
 
-
+  // Fungsi ini dijalankan ketika tombol "Hapus" pada baris kriteria diklik
   function removeCriteriaRow(button) {
     const row = button.closest("tr");
     Swal.fire({
@@ -612,6 +627,7 @@
     });
   }
 
+  // Merapikan penomoran input di tabel kriteria.
   function reindexCriteriaRows() {
     const criteriaRows = document.querySelectorAll('#criteriaList tr');
     criteriaRows.forEach((row, index) => {
@@ -628,6 +644,8 @@
   const totalWeightElement = document.getElementById('totalWeightDisplay');
   const totalWeightWarning = document.getElementById('totalWeightWarning');
 
+  // Menghitung total dari semua nilai bobot yang dimasukkan.
+  // Hasilnya akan ditampilkan, dan akan ada peringatan jika totalnya bukan 1.
   function calculateAndDisplayTotalWeight() {
     const criteriaRows = document.querySelectorAll('#criteriaList tr');
     let totalBobot = 0;
@@ -663,12 +681,14 @@
     }
   }
 
+  // Otomatis menjalankan fungsi hitung total bobot setiap kali pengguna mengubah nilai pada kotak input bobot.
   document.addEventListener('input', function (event) {
     if (event.target.name && event.target.name.startsWith('criteria_weight_')) {
       calculateAndDisplayTotalWeight();
     }
   });
 
+  // Berjalan satu kali setelah seluruh halaman web selesai dimuat. Gunanya untuk melakukan persiapan awal.
   document.addEventListener('DOMContentLoaded', function () {
     updateAltCount(); 
     rowCount = parseInt(document.getElementById('altCount').value);
@@ -682,29 +702,32 @@
     submitCriteria(); 
   });
 
-  function submitCriteria() {
-    const rows = document.querySelectorAll('#criteriaList tr');
-    const listContainer = document.getElementById('criteriaSummaryList');
-    listContainer.innerHTML = ""; 
+  // buat debug 
+  // function submitCriteria() {
+  //   const rows = document.querySelectorAll('#criteriaList tr');
+  //   const listContainer = document.getElementById('criteriaSummaryList');
+  //   listContainer.innerHTML = ""; 
 
-    rows.forEach((row, index) => {
-      const name = row.querySelector(`input[name^="criteria_name_"]`)?.value;
-      const weight = row.querySelector(`input[name^="criteria_weight_"]`)?.value;
-      const type = row.querySelector(`select[name^="criteria_type_"]`)?.value;
+  //   rows.forEach((row, index) => {
+  //     const name = row.querySelector(`input[name^="criteria_name_"]`)?.value;
+  //     const weight = row.querySelector(`input[name^="criteria_weight_"]`)?.value;
+  //     const type = row.querySelector(`select[name^="criteria_type_"]`)?.value;
 
-      if (name && weight && type) {
-        const li = document.createElement("li");
-        li.textContent = `${name} - Bobot: ${weight}, Tipe: ${type}`;
-        listContainer.appendChild(li);
-      }
-    });
-  }
+  //     if (name && weight && type) {
+  //       const li = document.createElement("li");
+  //       li.textContent = `${name} - Bobot: ${weight}, Tipe: ${type}`;
+  //       listContainer.appendChild(li);
+  //     }
+  //   });
+  // }
 
-  // SweetAlert for SAW Form Submission
+
+  // Berjalan saat tombol "Hitung SAW" diklik.
+  // Untuk menampilkan pesan konfirmasi sebelum mengirimkan data.
   submitSawBtn.addEventListener('click', function (e) {
     e.preventDefault(); // Prevent default form submission
 
-    // Lakukan validasi HTML5 sebelum menampilkan SweetAlert
+
     // if (!sawForm.checkValidity()) {
     //   Swal.fire({
     //     title: 'Peringatan Input!',
@@ -715,6 +738,7 @@
     //   });
     //   return;
     // }
+
 
     Swal.fire({
       title: 'Konfirmasi Perhitungan',
@@ -732,6 +756,8 @@
     });
   });
 
+
+  
   submitCriteriaBtn.addEventListener('click', function (e) {
     e.preventDefault(); 
 
@@ -749,6 +775,7 @@
       return;
     }
 
+     // Cek jika ada kolom yang belum diisi.
     if (!criteriaForm.checkValidity()) {
       Swal.fire({
         title: 'Peringatan Input Kriteria!',
@@ -760,7 +787,7 @@
       return;
     }
 
-    // Validasi total bobot
+    // Validasi total bobot ( cek jika total bobot tidak sama dengan 1.)
     const totalBobot = parseFloat(totalWeightElement.textContent);
     if (Math.abs(totalBobot - 1.0) > 0.001) { 
       Swal.fire({
@@ -773,6 +800,7 @@
       return;
     }
 
+    // Pesan konfirmasi jika semua data sudah benar.
     Swal.fire({
       title: 'Konfirmasi Submit Kriteria',
       text: "Apakah Anda yakin ingin menyimpan kriteria ini?",
