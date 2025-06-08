@@ -25,35 +25,54 @@ default_criteria = [
     {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak kuat<br>2: Kurang kuat<br>3: Cukup kuat<br>4: Kuat<br>5: Sangat kuat"},
 ]
 
-# Normalisai matrix berdasarkan tipe kriteria
+# Fungsi untuk melakukan normalisasi matrix berdasarkan tipe kriteria
 def normalize(matrix, types):
+    # List untuk menyimpan matriks yang sudah dinormalisasi
     normalized = []
     matrix_T = list(zip(*matrix))
 
+    # Iterasi melalui setiap kolom (yang merepresentasikan satu kriteria)
     for j, col in enumerate(matrix_T):
         tipe = types[j]
         col = list(col)
+        # Untuk kriteria 'Benefit' (semakin besar semakin baik)
         if tipe == 'Benefit':
             max_val = max(col)
-            # Handle case where all values are zero for a benefit criterion
+            # Handle case ketikasemua  value nya 0
             norm_col = [x / max_val if max_val != 0 else 0 for x in col]
-        else:  # Cost
+        # Untuk kriteria 'Cost' (semakin kecil semakin baik)    
+        else:  
             min_val = min(col)
-            # Handle case where min_val is 0 and x is 0
+            # Handle case ketika min_val nya 0 and x = 0
             norm_col = [min_val / x if x != 0 else 0 for x in col]
         normalized.append(norm_col)
 
     return list(map(list, zip(*normalized)))
 
-# Matriks Normalisasi x bobot kriteria
-def calculate_saw(matrix, weights, types):
+# Fungsi akhir untuk menghitung menggunakan saw
+def calculate_saw(matrix, weights, types): 
+    # STEP 1 >> Normalisasi Matriks Keputusan
+    # Memanggil fungsi normalize() untuk mendapatkan matriks yang sudah dinormalisasi. 
     normalized = normalize(matrix, types)
     weighted_matrix = []
     scores = []
+
+    # Iterasi melalui setiap baris di matriks yang sudah dinormalisasi (setiap baris mewakili satu alternatif)
     for row in normalized:
+        # STEP 2 >> Perkalian Matriks Normalisasi dengan Bobot Kriteria
+        # Mengalikan setiap nilai yang dinormalisasi dalam baris dengan bobot kriteria yang sesuai.
+        # w: bobot kriteria, r: nilai yang sudah dinormalisasi untuk kriteria tersebut.
         weighted_row = [w * r for w, r in zip(weights, row)]
         weighted_matrix.append(weighted_row)
+
+        # STEP 3 >> Penjumlahan Terbobot (Mendapatkan Skor Akhir)
+        # Menjumlahkan semua nilai dalam baris yang sudah terbobot untuk mendapatkan skor akhir (Vi) alternatif tersebut.
         scores.append(sum(weighted_row))
+
+    # Mengembalikan tiga hasil:
+    # 1. scores: Daftar skor akhir (nilai preferensi) untuk setiap alternatif.
+    # 2. normalized: Matriks keputusan yang sudah dinormalisasi.
+    # 3. weighted_matrix: Matriks yang sudah dinormalisasi dan dikalikan dengan bobot kriteria.
     return scores, normalized, weighted_matrix
 
 @app.route('/')
@@ -86,8 +105,9 @@ def utility_processor():
     
     return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
     
-# Route untuk halaman SAW (Simple Additive Weighting)
+# Route untuk halaman SAW 
 @app.route('/saw', methods=['GET', 'POST'])
+# Inisialisasi variabel untuk menyimpan data dan hasil perhitungan
 def saw():
     errors = []
     alternatives = []
@@ -104,6 +124,7 @@ def saw():
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
+        # Logika untuk submit form Kriteria 
         if form_type == 'criteria':
             submitted_criteria = []
             criteria_count_str = request.form.get('criteria_count_input')
@@ -156,8 +177,9 @@ def saw():
                 flash('Kriteria berhasil disimpan!', 'success')
 
 
+        # Logika untuk submit form Input Data Alternatif & Hitung SAW 
         elif form_type == 'saw':
-            # --- Membangun kembali list 'criteria' dari hidden inputs ---
+            # Membangun kembali list 'criteria' dari hidden inputs 
             existing_criteria_count_str = request.form.get('existing_criteria_count', '0')
             try:
                 existing_criteria_count = int(existing_criteria_count_str)
@@ -217,11 +239,14 @@ def saw():
                     if not alternatives or not matrix or len(alternatives) != alt_count or len(matrix) != alt_count:
                          errors.append("Data alternatif atau matriks tidak lengkap/kosong.")
 
+                    # Jika tidak ada error dan semua data input lengkap, lakukan perhitungan SAW
                     if not errors and alternatives and matrix and criteria:
                         weights = [c['bobot'] for c in criteria]
                         types = [c['tipe'] for c in criteria]
                         try:
+                            # Memanggil fungsi calculate_saw untuk mendapatkan skor, matriks normalisasi, dan matriks terbobot
                             scores, normalized_matrix, weighted_matrix = calculate_saw(matrix, weights, types)
+                            # Mengurutkan alternatif berdasarkan skor tertinggi
                             ranked = sorted(zip(alternatives, scores), key=lambda x: x[1], reverse=True)
                             flash('Perhitungan SAW berhasil!', 'success')
                         except Exception as e:
@@ -249,14 +274,18 @@ def saw():
 # dematel
 @app.route('/dematel', methods=['GET', 'POST'])
 def dematel():
+    # Jika user melakukan POST request (perhitungan DEMATEL)
     if request.method == 'POST':
         try:
+            # Ambil input label dan jumlah tiap kriteria 
             num_criteria = int(request.json['num_criteria'])
             criteria_labels = request.json.get('criteria_labels', [])
 
-            # Bersihkan label: gunakan default jika kosong
+            # Bersihkan label (spasi di awal maupun di akhir), gunakan default jika hasilnya kosong
+            # Contoh kriteria default: Kriteria 1, Kriteria 2, dst.
             criteria_labels = [label.strip() or f'Kriteria {i+1}' for i, label in enumerate(criteria_labels)]
-            # Pastikan criteria_labels memiliki panjang yang benar (jika ada yang terlewat dari frontend)
+
+            # Memastikan criteria_labels memiliki panjang yang benar (jika ada yang terlewat dari frontend)
             if len(criteria_labels) < num_criteria:
                 for i in range(len(criteria_labels), num_criteria):
                     criteria_labels.append(f'Kriteria {i+1}')
@@ -264,6 +293,7 @@ def dematel():
             if num_criteria <= 1:
                 return jsonify({'success': False, 'message': 'Jumlah kriteria harus lebih dari 1.'}), 400
 
+            # Ambil data matriks awal dari input
             matrix_data = []
             for i in range(num_criteria):
                 row = []
@@ -272,51 +302,57 @@ def dematel():
                     row.append(val)
                 matrix_data.append(row)
 
+            # Membuat matriks awal dari data yang diterima
             initial_matrix = np.array(matrix_data)
 
             # --- Langkah-langkah Perhitungan DEMATEL ---
+            # 1. Normalisasi Matriks
+            # a. Mencari jumlah maksimum dari setiap baris
+            # b. Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             max_sum = np.sum(initial_matrix, axis=1).max()
             normalized_matrix = initial_matrix / max_sum
 
+            # 2. Matriks Hubungan Total
+            # a. Menghitung matriks hubungan total dengan rumus: T = Y . (I-Y)^-1
             identity_matrix = np.identity(num_criteria)
             inv_part = np.linalg.inv(identity_matrix - normalized_matrix)
             total_relation_matrix = normalized_matrix @ inv_part
 
+            # 3. Hitung D (Ri), R (Ci), Prominence, Causal
             D = np.sum(total_relation_matrix, axis=1)
             R = np.sum(total_relation_matrix, axis=0)
 
             prominence = D + R      # Ri
             causal = D - R          # Ci
 
-            # --- Hitung Type of Identity ---
+            # --- Hitung Type of Identity (identitas) berdasarkan nilai Ri - Ci ---
             identity_types = []
             for val in causal:
                 if val > 0.0001:  # Menggunakan sedikit toleransi untuk floating point
                     identity_types.append('Cause')
-                elif val < -0.0001: # Menggunakan sedikit toleransi untuk floating point
-                    identity_types.append('Effect')
                 else:
-                    identity_types.append('Neutral')
+                    identity_types.append('Effect')
 
             # --- Combine D, R, Prominence, Causal, and Identity Type ---
-            # Create a list of dictionaries for easier rendering on frontend
+            # Membuat list of dictionaries untuk tabel summary D, R, Prominence, Causal, dan Identity Type
             combined_summary_data = []
             for i in range(num_criteria):
                 combined_summary_data.append({
                     'label': criteria_labels[i],
-                    'D': D[i].item(),  # Use .item() to get Python scalar from NumPy float
+                    'D': D[i].item(),  
                     'R': R[i].item(),
                     'prominence': prominence[i].item(),
                     'causal': causal[i].item(),
                     'type': identity_types[i]
                 })
 
+            # --- Hasilkan JSON untuk dikirim ke frontend ---
             results = {
                 'initial_matrix': initial_matrix.tolist(),
                 'normalized_matrix': normalized_matrix.tolist(),
                 'total_relation_matrix': total_relation_matrix.tolist(),
-                'criteria_labels': criteria_labels, # Still useful for matrix headers etc.
-                'combined_summary_data': combined_summary_data # New combined data
+                'criteria_labels': criteria_labels, 
+                'combined_summary_data': combined_summary_data 
             }
             return jsonify({'success': True, 'results': results})
 
@@ -327,9 +363,10 @@ def dematel():
         except Exception as e:
             return jsonify({'success': False, 'message': f'Terjadi kesalahan tak terduga: {str(e)}'}), 500
         
-    else: # GET request
-        # Inisialisasi kriteria default saat halaman dimuat
-        num_criteria = 6 # Jumlah kriteria default
+    else: # GET request (akses halaman awal DEMATEL, tanpa input)
+        # Inisialisasi kriteria default saat halaman dimuat (untuk Tabitha The Hopeful Scholarship)
+        # Jumlah kriteria, label, dan nilai matriks awal default
+        num_criteria = 6 
         initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] 
         initial_matrix_values = [
             [0, 1, 1, 4, 4, 1], 
@@ -344,6 +381,7 @@ def dematel():
             for i in range(len(initial_criteria_labels), num_criteria):
                 initial_criteria_labels.append(f'Kriteriaa {i+1}')
 
+        # Menampilkan halaman DEMATEL dengan nilai awal
         return render_template('dematel.html',
                             num_criteria=num_criteria,
                             criteria_labels_json=json.dumps(initial_criteria_labels), 
