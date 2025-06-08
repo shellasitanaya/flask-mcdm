@@ -310,6 +310,12 @@ def dematel():
             # a. Mencari jumlah maksimum dari setiap baris
             # b. Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             max_sum = np.sum(initial_matrix, axis=1).max()
+
+            # jika seluruh input berisi 0
+            if max_sum == 0:
+                return jsonify({'success': False, 'message': 'Seluruh input tidak boleh 0.'}), 400
+            
+            # Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             normalized_matrix = initial_matrix / max_sum
 
             # 2. Matriks Hubungan Total
