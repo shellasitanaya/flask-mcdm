@@ -436,7 +436,7 @@ def phpexample():
                     else:
                         data[idx1][idx2] = converted_val 
                 except (ValueError, TypeError):
-                    # This 'except' block catches:
+                    # Except catches:
                     # - Strings that cannot be converted to float (e.g., "hello", "N/A")
                     # - None values (float(None) raises TypeError)
                     data[idx1][idx2] = 0.0
