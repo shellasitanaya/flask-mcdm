@@ -18,11 +18,11 @@ DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 # Daftar kriteria dengan bobot dan tipe
 default_criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (3.01-4.00)"},
-    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: tidak aktif<br>2: sedikit aktif<br>3: cukup aktif<br>4: aktif<br>5: sangat aktif'},
-    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berkecukupan<br>2: sedikit berkecukupan<br>3: cukup berkecukupan<br>4: bercukupan<br>5: sangat bercukupan"},
+    {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: Tidak aktif<br>2: Sedikit aktif<br>3: Cukup aktif<br>4: Aktif<br>5: Sangat aktif'},
+    {'kode': 'C3', 'nama': 'Kondisi Ekonomi', 'tipe': 'Cost', 'bobot': 0.35, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak berkecukupan<br>2: Sedikit berkecukupan<br>3: Cukup berkecukupan<br>4: Bercukupan<br>5: Sangat bercukupan"},
     {'kode': 'C4', 'nama': 'Semester', 'tipe': 'Benefit', 'bobot': 0.05, 'description': "Isi dengan semester peserta (2-14)"},
-    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: tidak berprestasi<br>2: sedikit berprestasi<br>3: cukup berprestasi<br>4: berprestasi<br>5: sangat berprestasi"},
-    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: tidak kuat<br>2: kurang kuat<br>3: cukup kuat<br>4: kuat<br>5: sangat kuat"},
+    {'kode': 'C5', 'nama': 'Berprestasi', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak berprestasi<br>2: Sedikit berprestasi<br>3: Cukup berprestasi<br>4:Berprestasi<br>5: Sangat berprestasi"},
+    {'kode': 'C6', 'nama': 'Motivasi', 'tipe': 'Benefit', 'bobot': 0.20, 'description': "Beri nilai 1-5, dimana:<br>1: Tidak kuat<br>2: Kurang kuat<br>3: Cukup kuat<br>4: Kuat<br>5: Sangat kuat"},
 ]
 
 # Normalisai matrix berdasarkan tipe kriteria
@@ -60,8 +60,10 @@ def calculate_saw(matrix, weights, types):
 def home():
     return render_template('home.html')
 
+# Context processor untuk menyediakan data placeholder dan fungsi get_placeholder_range ke semua template
 @app.context_processor
 def utility_processor():
+    # Fungsi ini mengembalikan string placeholder berdasarkan nama kriteria
     def get_placeholder_range(criteria_name):
         criteria_name_lower = criteria_name.lower()
         if criteria_name_lower == 'ips':
@@ -84,7 +86,7 @@ def utility_processor():
     
     return dict(get_placeholder_range=get_placeholder_range, placeholder_data=placeholder_data)
     
-# Inputan dari form
+# Route untuk halaman SAW (Simple Additive Weighting)
 @app.route('/saw', methods=['GET', 'POST'])
 def saw():
     errors = []
@@ -95,7 +97,6 @@ def saw():
     scores = []
     ranked = []
 
-    # --- Bagian PENTING yang berubah: Inisialisasi Kriteria ---
     # Jika GET request, gunakan default_criteria.
     # Jika POST request, kriteria akan dibaca dari form_type yang sesuai.
     criteria = default_criteria.copy()
@@ -109,9 +110,7 @@ def saw():
 
             if not criteria_count_str:
                 flash("Jumlah kriteria tidak terkirim.", "error")
-                # Jika ada error di sini, tetap tampilkan form dengan kriteria yang sedang diinput
-                # agar user bisa koreksi. Tidak perlu 'return render_template' di setiap error
-                # karena akan di-handle di akhir fungsi.
+                
             
             try:
                 criteria_count = int(criteria_count_str)
@@ -124,6 +123,8 @@ def saw():
                 name = request.form.get(f'criteria_name_{i}', '').strip()
                 bobot_str = request.form.get(f'criteria_weight_{i}', '0')
                 tipe = request.form.get(f'criteria_type_{i}', 'Benefit').strip()
+                description = request.form.get(f'criteria_description_{i}', '').strip() 
+
 
                 if not name:
                     errors.append(f"Nama kriteria ke-{i+1} harus diisi.")
@@ -141,7 +142,7 @@ def saw():
                     bobot = 0
                     errors.append(f"Bobot untuk '{name}' tidak valid.")
 
-                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe})
+                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe, 'description': description})
 
             if submitted_criteria and abs(total_bobot - 1.0) > 0.001:
                 errors.append(f"Total bobot kriteria ({total_bobot:.2f}) harus sama dengan 1.")
@@ -151,16 +152,11 @@ def saw():
                 criteria = submitted_criteria # Gunakan kriteria yang disubmit (meskipun ada error)
             else:
                 criteria = submitted_criteria # Gunakan kriteria baru yang berhasil
-                # Hapus baris ini: session['criteria'] = criteria # <--- HAPUS INI
                 flash('Kriteria berhasil disimpan!', 'success')
-            
-            # Tidak perlu `return render_template` di sini. Biarkan alur kode berlanjut
-            # ke `return render_template` di akhir fungsi, yang akan menggunakan
-            # nilai `criteria` yang sudah diupdate.
 
 
         elif form_type == 'saw':
-            # --- Perubahan utama: Membangun kembali 'criteria' dari hidden inputs ---
+            # --- Membangun kembali list 'criteria' dari hidden inputs ---
             existing_criteria_count_str = request.form.get('existing_criteria_count', '0')
             try:
                 existing_criteria_count = int(existing_criteria_count_str)
@@ -168,8 +164,8 @@ def saw():
                 errors.append("Jumlah kriteria yang disubmit tidak valid.")
                 existing_criteria_count = 0
             
-            # Bangun ulang list 'criteria' dari hidden inputs
-            criteria = [] # Reset criteria to be built from hidden inputs
+            #  Reset criteria untuk dibangun dari hidden inputs
+            criteria = []
             for i in range(existing_criteria_count):
                 name = request.form.get(f'existing_criteria_name_{i}', '').strip()
                 weight_str = request.form.get(f'existing_criteria_weight_{i}', '0').strip()
@@ -199,6 +195,7 @@ def saw():
                 if not errors:
                     for i in range(alt_count):
                         alt_name = request.form.get(f'alt_name_{i}', '').strip()
+                        # Kalau nama alternatif kosong, gunakan nama default (A1, A2, dst.)
                         if not alt_name:
                             alt_name = f'A{i+1}'
                         alternatives.append(alt_name)
@@ -332,15 +329,24 @@ def dematel():
     else: # GET request
         # Inisialisasi kriteria default saat halaman dimuat
         num_criteria = 6 # Jumlah kriteria default
-        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] # Contoh label
+        initial_criteria_labels = ["IPS", "Aktif Kemahasiswaan", "Kondisi Ekonomi", "Semester", "Berprestasi", "Motivasi"] 
+        initial_matrix_values = [
+            [0, 1, 1, 4, 4, 1], 
+            [2, 0, 1, 1, 1, 1], 
+            [4, 4, 0, 4, 4, 4],
+            [1, 4, 4, 0, 1, 4],
+            [2, 3, 2, 3, 0, 1],
+            [1, 1, 1, 1, 1, 0]
+        ]
         # Pastikan jumlah label sesuai dengan jumlah kriteria, atau akan ditambahkan otomatis di JS
         if len(initial_criteria_labels) < num_criteria:
             for i in range(len(initial_criteria_labels), num_criteria):
                 initial_criteria_labels.append(f'Kriteriaa {i+1}')
 
         return render_template('dematel.html',
-                               num_criteria=num_criteria,
-                               criteria_labels_json=json.dumps(initial_criteria_labels)) # Kirim sebagai string JSON
+                            num_criteria=num_criteria,
+                            criteria_labels_json=json.dumps(initial_criteria_labels), 
+                            initial_matrix_values=json.dumps(initial_matrix_values))
 
 @app.route('/read-excel', methods=['POST'])
 def phpexample():

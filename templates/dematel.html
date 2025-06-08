@@ -94,14 +94,14 @@
 
     // Ambil label kriteria awal dari backend
     const initialCriteriaLabels = JSON.parse('{{ criteria_labels_json | safe }}');
-    
+    const initialMatrixValues = JSON.parse('{{ initial_matrix_values | safe }}'); // Ambil data matriks input awal
 
     document.addEventListener('DOMContentLoaded', function() {
         const numCriteriaInput = document.getElementById('num_criteria');
 
         // inisialisasi matriks input awal
-        if (numCriteriaInput.value && initialCriteriaLabels) {
-            generateMatrixInputs(initialCriteriaLabels);
+        if (numCriteriaInput.value && initialCriteriaLabels && initialMatrixValues) {
+            generateMatrixInputs(initialCriteriaLabels, initialMatrixValues);
         }
 
         // submission handler untuk form DEMATEL
@@ -162,8 +162,8 @@
                             icon: 'success',
                             title: 'Perhitungan Berhasil!',
                             text: 'Hasil DEMATEL telah ditampilkan.',
-                            timer: 2000,
-                            showConfirmButton: false
+                            // timer: 2000,
+                            showConfirmButton: true
                         });
                     } else {
                         // Tampilkan error menggunakan SweetAlert
