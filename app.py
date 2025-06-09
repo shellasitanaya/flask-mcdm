@@ -164,7 +164,7 @@ def saw():
                     bobot = 0
                     errors.append(f"Bobot untuk '{name}' tidak valid.")
 
-                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe, 'description': description})
+                submitted_criteria.append({'kode': f'CC{i+1}', 'nama': name, 'bobot': bobot, 'tipe': tipe})
 
             if submitted_criteria and abs(total_bobot - 1.0) > 0.001:
                 errors.append(f"Total bobot kriteria ({total_bobot:.2f}) harus sama dengan 1.")
@@ -310,6 +310,12 @@ def dematel():
             # a. Mencari jumlah maksimum dari setiap baris
             # b. Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             max_sum = np.sum(initial_matrix, axis=1).max()
+
+            # jika seluruh input berisi 0
+            if max_sum == 0:
+                return jsonify({'success': False, 'message': 'Seluruh input tidak boleh 0.'}), 400
+            
+            # Normalisasi matriks dengan membagi setiap elemen dengan jumlah maksimum
             normalized_matrix = initial_matrix / max_sum
 
             # 2. Matriks Hubungan Total
@@ -387,6 +393,8 @@ def dematel():
                             criteria_labels_json=json.dumps(initial_criteria_labels), 
                             initial_matrix_values=json.dumps(initial_matrix_values))
 
+
+# fungsi untuk membaca file template (xlsx, xls, atau csv dari pengguna)
 @app.route('/read-excel', methods=['POST'])
 def phpexample():
      
@@ -410,6 +418,7 @@ def phpexample():
     else:
         return jsonify({"error": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}), 400
     
+    # mempermudah pembacaan data, hapus kolom pertama jika dematel
     if(request.form.get('method_type') is not None and request.form.get('method_type')=="DEMATEL"):
         df.drop(columns=df.columns[0], inplace=True)
         
@@ -421,21 +430,22 @@ def phpexample():
                 try:
                     converted_val = float(val)
 
-                    # Now, check if the converted float is NaN
-                    # Use np.isnan() as it's designed for NumPy NaNs (which pandas uses)
+                    # check if the converted float is NaN
                     if np.isnan(converted_val):
-                        data[idx1][idx2] = 0.0 # Replace NaN with 0.0
+                        data[idx1][idx2] = 0.0 # ganti pake 0.0 kalok NaN
                     else:
-                        data[idx1][idx2] = converted_val # Keep the converted float
+                        data[idx1][idx2] = converted_val 
                 except (ValueError, TypeError):
-                    # This 'except' block catches:
+                    # Except catches:
                     # - Strings that cannot be converted to float (e.g., "hello", "N/A")
                     # - None values (float(None) raises TypeError)
                     data[idx1][idx2] = 0.0
-    print(data)
+
+    # kembalikan hasil pembacaan template
     return jsonify(data)
 
 
+# fungsi membuat template
 @app.route('/download_template', methods=['POST'])
 def download_template():
 
@@ -446,7 +456,6 @@ def download_template():
 
     if template_name == "DEMATEL":
         criteria_amount = int(request.form.get('criteria_amount'))
-        # print(f"CRITERIA AMOUNT: {criteria_amount}")
         last_col_idx = 1 + criteria_amount
 
         ws.append([''] + [f'C{i}' for i in range(1, criteria_amount+1)])
@@ -464,7 +473,6 @@ def download_template():
                 cell.comment = Comment("Ganti nama sesuai dengan kriteria anda.", "Author")
             # for diagonal zeros
             cell = ws.cell(row=i+1, column=i+1) 
-            # cell.protection = Protection(locked=True)
             cell.font = Font(bold=True, color="FF0000") 
             if i < last_col_idx:
                 cell.comment = Comment("Angka merah tidak perlu diubah", "Author")
@@ -476,15 +484,6 @@ def download_template():
             
             cell.font = Font(bold=True)
             cell.alignment = Alignment(wrap_text=True, vertical='center')
-
-           
-
-        # atur lebar
-        # ws.column_dimensions['A'].width = 25 
-
-        # for i, _ in enumerate(criterias):
-        #     col_letter = get_column_letter(i + 2) 
-        #     ws.column_dimensions[col_letter].width = 10
 
         
         # grid for usable columns
@@ -501,7 +500,6 @@ def download_template():
 
         # nama sheets
         ws.title = "Input Data DEMATEL"
-        # ws.protection.sheet = True
 
         # comment kalok boleh nambah kriteria
         ws.cell(row=1, column=last_col_idx+1).comment = Comment("Tambah kriteria di sini.", "Author")
@@ -513,7 +511,7 @@ def download_template():
         ws.append(['Nama Alternatif'] + criterias)
 
         # make it bold
-        for cell in ws[1]: # In openpyxl, rows are 1-indexed (ws[1] is the first row)
+        for cell in ws[1]: 
             cell.font = Font(bold=True)
             cell.alignment = Alignment(wrap_text=True, vertical='center')
 
@@ -530,10 +528,9 @@ def download_template():
                             right=Side(style='thin'), 
                             top=Side(style='thin'), 
                             bottom=Side(style='thin'))
-        
-        # Determine the last column letter
+
+
         last_col_idx = 1 + len(criterias) 
-        # last_col_letter = get_column_letter(last_col_idx)
 
         for r_idx in range(1, 100 + 1): # r_idx goes from 1 (header) to total_data_rows
             for c_idx in range(1, last_col_idx + 1): # c_idx goes from 1 (col A) to last_col_idx
@@ -551,9 +548,9 @@ def download_template():
 
     filename = f'template_{template_name}.xlsx'
 
-    # wb.save("myworkbook.xlsx")
+    # return file template ke frontend
     return send_file(output,
-                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', # Correct MIME type for .xlsx files
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
                     as_attachment=True,
                     download_name=filename)
 

@@ -862,17 +862,18 @@
   });
 
 
-
+  // fungsi untuk membaca file excel yang telah diupload dan mengisi tabel perhitungan SAW
   uploadExcelForm.addEventListener('submit', async function (e) {
     e.preventDefault(); 
 
     const formData = new FormData(this); 
 
+    // cek apakah ada file yang diinput user
     const fileInput = this.querySelector('input[type="file"]');
     if (fileInput.files.length === 0) {
       Swal.fire({
         title: "Error",
-        text: "No file selected.",
+        text: "Mohon input file.",
         icon: "error"
       });
 
@@ -900,7 +901,7 @@
 
           try {
             resultt = await response.json();
-          } catch (jsonError) {
+          } catch (jsonError) { // biasanya karena ada data NaN (ada cell yang kosong)
             Swal.fire({
                 icon: "error",
                 title: "Error",
@@ -913,26 +914,24 @@
           if (response.ok) {
 
             const tbody = document.getElementById('tableBody');
-            const criteriaCount = parseInt(document.getElementById('criteria-count').value);
 
 
             // empty out entries
             tbody.innerHTML=``;
             rowCount = 0;
 
-            // check if template suits excel (check if criteria names match)
+            // cek apakah template sesuai dengan kriteria yang ada. Tolak apabila tidak.
             const firstRowInExcel = resultt.shift();
+            const criteriaNameInputs = document.querySelectorAll('input[name^="existing_criteria_name_"]');
+            const criteriaCount = criteriaNameInputs.length;
 
             let criteriaNames = [];
             for (let i = 0; i < criteriaCount; i++) {
-              const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+              const nameInput = criteriaNameInputs[i];
               if (nameInput) {
                 criteriaNames.push(nameInput.value);
               }
             }
-
-            // console.log(criteriaNames);
-            // console.log(firstRowInExcel);
 
             let isWrongTemplate = false
 
@@ -948,10 +947,14 @@
               Swal.fire({
                 icon: "error",
                 title: "Error",
-                text: "Template tidak sesuai kriteria terpilih!",
+                text: "Template tidak sesuai kriteria yang disubmit!",
               });
+              document.getElementById('addRowBtn').click();
               return
             }
+
+            // buat baris-baris baru di tabel perhitungan SAW berisi alternatif dari template pengguna
+            const altLength = resultt.length;
 
             resultt.forEach(alternative => {
               const row = document.createElement('tr');
@@ -975,7 +978,18 @@
               tbody.appendChild(row);
               rowCount++;
               updateAltCount();
+            })
+
+            Swal.fire({
+              title: "Success",
+              text: `${altLength} baris telah ditambahkan.`,
+              icon: "success"
             });
+
+            if (altLength === 0) {
+              document.getElementById('addRowBtn').click();
+            }
+
 
           } else {
             
@@ -989,22 +1003,28 @@
         } 
       });
     } catch (error) {
-      console.error('Network or parsing error:', error);
-      uploadMessageDiv.innerHTML = `<span class="text-red-600">An unexpected client-side error occurred: ${error.message}</span>`;
-      if (rowCount === 0) addRow(); // Ensure at least one row exists for manual input
+      Swal.fire({
+          title: "Error",
+          text: 'Network or parsing error:' + error,
+          icon: "error"
+      });
+      if (rowCount === 0) document.getElementById('addRowBtn').click(); // sisakan 1 row agar pengguna tidak bingung (untuk user experience)
     }
   });
 
 
-
+  // fungsi untuk download template SAW (file excel yang bisa diisi pengguna untuk mempermudah proses input data)
   document.getElementById('downloadExcelButton').addEventListener('click', async function(e){
     e.preventDefault();
     
-    const criteriaCount = criteriaCountInput ? parseInt(criteriaCountInput.value) : 0;
-
+    // kirim nama-nama alternatif untuk dijadikan template
+    const criteriaNameInputs = document.querySelectorAll('input[name^="existing_criteria_name_"]');
+    const criteriaCount = criteriaNameInputs.length;
+    
     let criteriaNames = [];
     for (let i = 0; i < criteriaCount; i++) {
-      const nameInput = document.querySelector(`#criteriaForm input[name="criteria_name_${i}"]`);
+      // document.querySelector('#sawForm input[name="existing_criteria_count"]');
+      const nameInput = criteriaNameInputs[i];
       if (nameInput) {
         criteriaNames.push(nameInput.value);
       }
@@ -1019,36 +1039,29 @@
         title: "Unduh?",
         showCancelButton: true,
         confirmButtonText: "Ya, unduh",
-        text: "Bentuk template akan mengikuti kriteria yang telah diatur.",
+        text: "Bentuk template akan mengikuti kriteria yang telah disubmit.",
         icon: "question"
       }).then(async (result) => {
 
         if (result.isConfirmed) {
-          
-          const response = await fetch('/download_template', { // Send to your Flask route
+          // memanggil fungsi generate dan download template di app.py
+          const response = await fetch('/download_template', {
             method: 'POST',
-            body: formData, // FormData handles 'multipart/form-data' correctly
+            body: formData,
           });
 
           try {
             
-            
              if (response.ok) { 
                 const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = 'template SAW.xlsx'; 
-                // if (contentDisposition && contentDisposition.includes('attachment')) {
-                    
-                //     const filenameMatch = contentDisposition.match(/filename\*?=['"]?(?:UTF-8''|[^;']*)?([^;']+)/);
-                //     if (filenameMatch && filenameMatch[1]) {
-                //         filename = decodeURIComponent(filenameMatch[1]);
-                //     }
-                // }
+                let filename = 'template SAW.xlsx'; // nama file template
 
 
                 const blob = await response.blob();
 
                 const url = window.URL.createObjectURL(blob);
 
+                // logika agar file template terunduh
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename; 
@@ -1060,9 +1073,6 @@
           } catch (e) {
               console.error("Error parsing response as JSON:", e);
           }
-          
-
-          
         } 
         
       });
@@ -1078,7 +1088,7 @@
   });
 
 
-
+  // instruction modal toggle
   const instructionModal = document.getElementById('instruction-modal');
   function toggleDirectionModal() {
     document.body.classList.toggle('no-scroll');
