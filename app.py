@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.secret_key = 'secret-key' 
 DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
-# Daftar kriteria dengan bobot dan tipe
+# Daftar kriteria dengan bobot, tipe, dan deskripsi
 default_criteria = [
     {'kode': 'C1', 'nama': 'IPS', 'tipe': 'Benefit', 'bobot': 0.15, 'description': "Isi dengan IPS yang paling baru (3.01-4.00)"},
     {'kode': 'C2', 'nama': 'Aktif Kemahasiswaan', 'tipe': 'Benefit', 'bobot': 0.10, 'description':'Beri nilai 1-5, dimana:<br>1: Tidak aktif<br>2: Sedikit aktif<br>3: Cukup aktif<br>4: Aktif<br>5: Sangat aktif'},
