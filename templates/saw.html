@@ -177,7 +177,7 @@
                             <input type="number" name="value_0_{{j}}"
                                 class="w-full text-center border rounded px-1 py-1 text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
                                 placeholder="{{ p_data }}" required
-                                {% if criteria[j].nama.lower() == 'ips' %} min="0" max="4" step="0.01"
+                                {% if criteria[j].nama.lower() == 'ips' %} min="3.01" max="4" step="0.01"
                                 {% elif criteria[j].nama.lower() == 'semester' %} min="1" max="14" step="1"
                                 {% elif criteria[j].nama.lower() in ['aktif kemahasiswaan', 'kondisi ekonomi', 'berprestasi', 'motivasi'] %} min="1" max="5" step="1"
                                 {% endif %}>
@@ -772,16 +772,16 @@
     e.preventDefault(); // Prevent default form submission
 
 
-    // if (!sawForm.checkValidity()) {
-    //   Swal.fire({
-    //     title: 'Peringatan Input!',
-    //     text: 'Harap isi semua kolom alternatif yang diperlukan.',
-    //     icon: 'warning',
-    //     confirmButtonColor: '#3085d6',
-    //     confirmButtonText: 'Oke'
-    //   });
-    //   return;
-    // }
+    if (!sawForm.checkValidity()) {
+      Swal.fire({
+        title: 'Peringatan Input!',
+        text: 'Harap isi semua kolom alternatif yang diperlukan.',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Oke'
+      });
+      return;
+    }
 
 
     Swal.fire({
@@ -971,7 +971,7 @@
               }
               rowHTML += `
                 <td class="border border-gray-300 px-2 py-1 text-center">
-                  <button type="button" class="remove-row text-red-600 font-semibold">Delete</button>
+                  <button type="button" class="remove-row text-red-600 font-semibold">Hapus</button>
                 </td>`;
 
               row.innerHTML = rowHTML;
